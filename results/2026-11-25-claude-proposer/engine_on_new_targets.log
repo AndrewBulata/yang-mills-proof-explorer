@@ -1,0 +1,42 @@
+
+=== round 1: 6 open targets ===
+
+> haar_left_invariant  (depth 0, attempt 1)
+  not yet. stuck at: G : Type u_1
+inst✝¹ : Group G
+inst✝ : Fintype G
+f : G → ℝ
+z : G
+⊢ ∑ x, f (z * x) = ∑ x, f x
+
+> elitzur_mechanism  (depth 0, attempt 1)
+  not yet. stuck at: G : Type u_1
+inst✝¹ : Group G
+inst✝ : Fintype G
+w O : G → ℝ
+z : G
+hw : ∀ (x : G), w (z * x) = w x
+hO : ∀ (x : G), O (z * x) = -O x
+⊢ ∑ x, w x * O x = 0
+
+> z2_plaquette_expectation  (depth 0, attempt 1)
+  not yet. stuck at: β : ℝ
+⊢ (∑ b, spin b * Real.exp (β * spin b)) / ∑ b, Real.exp (β * spin b) = Real.tanh β
+
+> z2_wilson_loop_area_law  (depth 0, attempt 1)
+  not yet. stuck at: β : ℝ
+A : ℕ
+⊢ (∑ s, ∏ i, spin (s i) * Real.exp (β * spin (s i))) / ∑ s, ∏ i, Real.exp (β * spin (s i)) = Real.tanh β ^ A
+
+> z2_string_tension_pos  (depth 0, attempt 1)
+  not yet. stuck at: β : ℝ
+hβ : 0 < β
+⊢ Real.log (Real.tanh β) < 0
+
+> z2_area_law_exponential  (depth 0, attempt 1)
+  not yet. stuck at: β : ℝ
+hβ : 0 < β
+A : ℕ
+⊢ Real.tanh β ^ A = Real.exp (Real.log (Real.tanh β) * ↑A)
+
+Summary: 0/6 proved. Blueprint saved to /home/claude/new_targets_run.json

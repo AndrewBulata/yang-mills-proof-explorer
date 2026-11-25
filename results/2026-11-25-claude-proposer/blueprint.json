@@ -1,0 +1,246 @@
+{
+  "preamble": "import Mathlib.Analysis.SpecialFunctions.Log.Basic\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.NoncommRing\nimport Mathlib.Tactic.Group\nimport Mathlib.Tactic.FieldSimp\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Abel\nimport Mathlib.Algebra.Order.Archimedean.Basic\nimport Mathlib.Algebra.BigOperators.Group.Finset.Basic\nimport Mathlib.Data.Int.Order.Units\nimport Mathlib.Tactic.GCongr\nopen BigOperators\n\nnamespace YM\n\ndef gaugeTransform {G X : Type*} [Group G] (g : X → G) (U : X → X → G) : X → X → G :=\n  fun x y => g x * U x y * (g y)⁻¹\n\nstructure Plaquette (X : Type*) where\n  a : X\n  b : X\n  c : X\n  d : X\n\ndef holonomy {G X : Type*} [Group G] (U : X → X → G) (p : Plaquette X) : G :=\n  U p.a p.b * U p.b p.c * U p.c p.d * U p.d p.a\n\nend YM\nopen YM\n\n/-- Z₂ spin: true ↦ +1, false ↦ -1. -/\ndef spin (b : Bool) : ℝ := if b then 1 else -1",
+  "targets": [
+    {
+      "name": "jacobi_ring",
+      "about": "Jacobi identity for commutators. Algebra behind the Bianchi identity.",
+      "statement": "theorem jacobi_ring {R : Type*} [Ring R] (a b c : R) : (a * (b * c - c * b) - (b * c - c * b) * a) + (b * (c * a - a * c) - (c * a - a * c) * b) + (c * (a * b - b * a) - (a * b - b * a) * c) = 0",
+      "status": "proved",
+      "depth": 0,
+      "pathway": 0,
+      "proof": "theorem jacobi_ring {R : Type*} [Ring R] (a b c : R) : (a * (b * c - c * b) - (b * c - c * b) * a) + (b * (c * a - a * c) - (c * a - a * c) * b) + (c * (a * b - b * a) - (a * b - b * a) * c) = 0 := by\n  grind",
+      "origin": "engine search (tactic list)"
+    },
+    {
+      "name": "holonomy_gauge",
+      "about": "Wilson loop around a plaquette transforms by conjugation. Core of lattice gauge invariance.",
+      "statement": "theorem holonomy_gauge {G X : Type*} [Group G] (g : X → G) (U : X → X → G) (p : Plaquette X) : holonomy (gaugeTransform g U) p = g p.a * holonomy U p * (g p.a)⁻¹",
+      "status": "proved",
+      "depth": 0,
+      "pathway": 0,
+      "proof": "theorem holonomy_gauge {G X : Type*} [Group G] (g : X → G) (U : X → X → G) (p : Plaquette X) : holonomy (gaugeTransform g U) p = g p.a * holonomy U p * (g p.a)⁻¹ := by\n  unfold holonomy gaugeTransform\n  group",
+      "origin": "engine search (tactic list)"
+    },
+    {
+      "name": "two_site_gap",
+      "about": "Two-site lattice: on states orthogonal to the vacuum (1,1), energy is at least 2. A finite-volume gap.",
+      "statement": "theorem two_site_gap (v₀ v₁ : ℝ) (h : v₀ + v₁ = 0) : (v₀ - v₁) ^ 2 ≥ 2 * (v₀ ^ 2 + v₁ ^ 2)",
+      "status": "proved",
+      "depth": 0,
+      "pathway": 0,
+      "proof": "theorem two_site_gap (v₀ v₁ : ℝ) (h : v₀ + v₁ = 0) : (v₀ - v₁) ^ 2 ≥ 2 * (v₀ ^ 2 + v₁ ^ 2) := by\n  nlinarith [sq_nonneg (0 : ℝ)]",
+      "origin": "engine search (tactic list)"
+    },
+    {
+      "name": "three_site_gap",
+      "about": "Complete graph on 3 sites: gap 3 above the vacuum.",
+      "statement": "theorem three_site_gap (v₀ v₁ v₂ : ℝ) (h : v₀ + v₁ + v₂ = 0) : (v₀ - v₁) ^ 2 + (v₁ - v₂) ^ 2 + (v₂ - v₀) ^ 2 ≥ 3 * (v₀ ^ 2 + v₁ ^ 2 + v₂ ^ 2)",
+      "status": "proved",
+      "depth": 0,
+      "pathway": 0,
+      "proof": "theorem three_site_gap (v₀ v₁ v₂ : ℝ) (h : v₀ + v₁ + v₂ = 0) : (v₀ - v₁) ^ 2 + (v₁ - v₂) ^ 2 + (v₂ - v₀) ^ 2 ≥ 3 * (v₀ ^ 2 + v₁ ^ 2 + v₂ ^ 2) := by\n  nlinarith [sq_nonneg (0 : ℝ)]",
+      "origin": "engine search (tactic list)"
+    },
+    {
+      "name": "massive_uniform_gap",
+      "about": "Lattice free field WITH a mass term: gap ≥ m² for every lattice size N. Uniform in N, which is what a mass gap means.",
+      "statement": "theorem massive_uniform_gap (N : ℕ) (v : ℕ → ℝ) (m : ℝ) : ∑ i ∈ Finset.range N, (v (i + 1) - v i) ^ 2 + m ^ 2 * ∑ i ∈ Finset.range N, v i ^ 2 ≥ m ^ 2 * ∑ i ∈ Finset.range N, v i ^ 2",
+      "status": "proved",
+      "depth": 0,
+      "pathway": 0,
+      "proof": "theorem massive_uniform_gap (N : ℕ) (v : ℕ → ℝ) (m : ℝ) : ∑ i ∈ Finset.range N, (v (i + 1) - v i) ^ 2 + m ^ 2 * ∑ i ∈ Finset.range N, v i ^ 2 ≥ m ^ 2 * ∑ i ∈ Finset.range N, v i ^ 2 := by\n  norm_num\n  positivity",
+      "origin": "engine search (tactic list)"
+    },
+    {
+      "name": "gaps_can_close",
+      "about": "Positive gap at every size does not give a uniform gap.",
+      "statement": "theorem gaps_can_close : ∃ Δ : ℕ → ℝ, (∀ L, 0 < Δ L) ∧ ¬ ∃ m > 0, ∀ L, m ≤ Δ L",
+      "status": "proved",
+      "depth": 0,
+      "pathway": 0,
+      "proof": "theorem gaps_can_close : ∃ Δ : ℕ → ℝ, (∀ L, 0 < Δ L) ∧ ¬ ∃ m > 0, ∀ L, m ≤ Δ L := by\n  refine ⟨fun L => 1 / ((L : ℝ) + 1), fun L => by positivity, ?_⟩\n  rintro ⟨m, hm, h⟩\n  obtain ⟨N, hN⟩ := exists_nat_one_div_lt hm\n  have hN' : m ≤ 1 / ((N : ℝ) + 1) := h N\n  linarith",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "massless_gap_closes",
+      "about": "STRETCH. Massless lattice field: mean-zero, unit-norm states with arbitrarily small gradient energy exist. The gap closes as N grows, so no mass gap. Contrast with massive_uniform_gap. Yang-Mills is classically massless; the conjecture is that quantum effects reopen the gap.",
+      "statement": "theorem massless_gap_closes : ∀ ε > 0, ∃ N : ℕ, ∃ v : ℕ → ℝ, (∑ i ∈ Finset.range N, v i = 0) ∧ (∑ i ∈ Finset.range N, v i ^ 2 = 1) ∧ ∑ i ∈ Finset.range (N - 1), (v (i + 1) - v i) ^ 2 < ε",
+      "status": "proved",
+      "depth": 0,
+      "pathway": 0,
+      "proof": "theorem massless_gap_closes : ∀ ε > 0, ∃ N : ℕ, ∃ v : ℕ → ℝ,\n    (∑ i ∈ Finset.range N, v i = 0) ∧ (∑ i ∈ Finset.range N, v i ^ 2 = 1) ∧\n    ∑ i ∈ Finset.range (N - 1), (v (i + 1) - v i) ^ 2 < ε := by\n  intro ε hε\n  obtain ⟨M, hM⟩ := exists_nat_one_div_lt (half_pos hε)\n  set K : ℕ := M + 1 with hK\n  have hKpos : (0 : ℝ) < K := by positivity\n  set c : ℝ := Real.sqrt (1 / (2 * K)) with hc\n  have hc2 : c ^ 2 = 1 / (2 * K) := by\n    rw [hc, Real.sq_sqrt]; positivity\n  let v : ℕ → ℝ := fun i => if i < K then c else -c\n  refine ⟨K + K, v, ?_, ?_, ?_⟩\n  · rw [Finset.sum_range_add]\n    have h1 : ∑ i ∈ Finset.range K, v i = ∑ i ∈ Finset.range K, c :=\n      Finset.sum_congr rfl (fun i hi => by simp [v, Finset.mem_range.mp hi])\n    have h2 : ∑ i ∈ Finset.range K, v (K + i) = ∑ i ∈ Finset.range K, -c :=\n      Finset.sum_congr rfl (fun i _ => by simp [v])\n    rw [h1, h2]; simp\n  · rw [Finset.sum_range_add]\n    have h1 : ∑ i ∈ Finset.range K, v i ^ 2 = ∑ i ∈ Finset.range K, c ^ 2 :=\n      Finset.sum_congr rfl (fun i hi => by simp [v, Finset.mem_range.mp hi])\n    have h2 : ∑ i ∈ Finset.range K, v (K + i) ^ 2 = ∑ i ∈ Finset.range K, c ^ 2 :=\n      Finset.sum_congr rfl (fun i _ => by simp [v])\n    rw [h1, h2, hc2]; simp; field_simp; ring\n  · have hN : K + K - 1 = M + (M + 1) := by omega\n    rw [hN, Finset.sum_range_add, Finset.sum_range_succ']\n    have h1 : ∑ i ∈ Finset.range M, (v (i + 1) - v i) ^ 2 = 0 :=\n      Finset.sum_eq_zero (fun i hi => by\n        have := Finset.mem_range.mp hi\n        simp [v, show i + 1 < K by omega, show i < K by omega])\n    have h2 : ∑ i ∈ Finset.range M, (v (M + (i + 1) + 1) - v (M + (i + 1))) ^ 2 = 0 :=\n      Finset.sum_eq_zero (fun i _ => by\n        simp [v, show ¬ (M + (i + 1) + 1 < K) by omega, show ¬ (M + (i + 1) < K) by omega])\n    have h3 : (v (M + 0 + 1) - v (M + 0)) ^ 2 = 4 * c ^ 2 := by\n      simp [v, show ¬ (M + 1 < K) by omega, show M < K by omega]; ring\n    rw [h1, h2, h3, hc2]\n    have : (1 : ℝ) / ((M : ℝ) + 1) < ε / 2 := hM\n    have hK' : (K : ℝ) = M + 1 := by simp [hK]\n    rw [hK']\n    have hpos : (0 : ℝ) < (M : ℝ) + 1 := by positivity\n    calc (0 : ℝ) + (0 + 4 * (1 / (2 * ((M : ℝ) + 1)))) = 2 * (1 / ((M : ℝ) + 1)) := by\n          field_simp; ring\n      _ < 2 * (ε / 2) := by linarith\n      _ = ε := by ring",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "gap_criterion_discrete",
+      "pathway": 1,
+      "about": "Conditional gap criterion, discrete spectrum: one common exponential rate for the heat kernel forces every occupied level above that rate. The finite-dimensional core of the reduction used against ChallengeSpec.",
+      "statement": "theorem gap_criterion_discrete (lam w : ℕ → ℝ) (n : ℕ) (hw : ∀ i, 0 ≤ w i) (C m : ℝ) (h : ∀ t : ℝ, 1 ≤ t → ∑ i ∈ Finset.range n, w i * Real.exp (-t * lam i) ≤ C * Real.exp (-m * t)) : ∀ i < n, 0 < w i → m ≤ lam i",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem gap_criterion_discrete (lam w : ℕ → ℝ) (n : ℕ) (hw : ∀ i, 0 ≤ w i) (C m : ℝ)\n    (h : ∀ t : ℝ, 1 ≤ t → ∑ i ∈ Finset.range n, w i * Real.exp (-t * lam i) ≤ C * Real.exp (-m * t)) :\n    ∀ i < n, 0 < w i → m ≤ lam i := by\n  intro i hi hwi\n  by_contra hlt\n  push Not at hlt\n  have hd : 0 < m - lam i := by linarith\n  have hwd : 0 < w i * (m - lam i) := mul_pos hwi hd\n  let t : ℝ := max 1 (C / (w i * (m - lam i)) + 1)\n  have ht1 : 1 ≤ t := le_max_left _ _\n  have hbig : C / (w i * (m - lam i)) + 1 ≤ t := le_max_right _ _\n  have hsingle : w i * Real.exp (-t * lam i) ≤ ∑ j ∈ Finset.range n, w j * Real.exp (-t * lam j) :=\n    Finset.single_le_sum (f := fun j => w j * Real.exp (-t * lam j))\n      (fun j _ => mul_nonneg (hw j) (Real.exp_pos _).le) (Finset.mem_range.mpr hi)\n  have key := hsingle.trans (h t ht1)\n  have e1 : Real.exp (-t * lam i) = Real.exp (-m * t) * Real.exp (t * (m - lam i)) := by\n    rw [← Real.exp_add]; congr 1; ring\n  rw [e1] at key\n  have hexp : 0 < Real.exp (-m * t) := Real.exp_pos _\n  have key2 : w i * Real.exp (t * (m - lam i)) ≤ C := by\n    have h3 : Real.exp (-m * t) * (w i * Real.exp (t * (m - lam i))) ≤ Real.exp (-m * t) * C := by\n      linarith [key]\n    exact le_of_mul_le_mul_left h3 hexp\n  have hlin : t * (m - lam i) + 1 ≤ Real.exp (t * (m - lam i)) := Real.add_one_le_exp _\n  have hC : C < w i * (m - lam i) * t := by\n    have h1 : C / (w i * (m - lam i)) < t := by linarith\n    have := (div_lt_iff₀ hwd).mp h1\n    linarith\n  have h4 : w i * (t * (m - lam i) + 1) ≤ w i * Real.exp (t * (m - lam i)) :=\n    mul_le_mul_of_nonneg_left hlin hwi.le\n  nlinarith",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "contraction_decay",
+      "pathway": 1,
+      "about": "Transfer matrix contraction: a one-step contraction factor q gives geometric decay.",
+      "statement": "theorem contraction_decay (v : ℕ → ℝ) (q : ℝ) (hq : 0 ≤ q) (h : ∀ n, v (n + 1) ≤ q * v n) : ∀ n, v n ≤ q ^ n * v 0",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem contraction_decay (v : ℕ → ℝ) (q : ℝ) (hq : 0 ≤ q) (h : ∀ n, v (n + 1) ≤ q * v n) :\n    ∀ n, v n ≤ q ^ n * v 0 := by\n  intro n\n  induction n with\n  | zero => simp\n  | succ k ih =>\n    calc v (k + 1) ≤ q * v k := h k\n      _ ≤ q * (q ^ k * v 0) := mul_le_mul_of_nonneg_left ih hq\n      _ = q ^ (k + 1) * v 0 := by ring",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "gap_from_contraction",
+      "pathway": 1,
+      "about": "A contraction q < 1 at Euclidean time τ gives a positive gap -log(q)/τ.",
+      "statement": "theorem gap_from_contraction (q τ : ℝ) (hq : 0 < q) (hq1 : q < 1) (hτ : 0 < τ) : 0 < -Real.log q / τ",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem gap_from_contraction (q τ : ℝ) (hq : 0 < q) (hq1 : q < 1) (hτ : 0 < τ) :\n    0 < -Real.log q / τ :=\n  div_pos (neg_pos.mpr (Real.log_neg hq hq1)) hτ",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "pow_eq_exp_log",
+      "pathway": 1,
+      "about": "Geometric decay is exponential decay with rate -log q.",
+      "statement": "theorem pow_eq_exp_log (q : ℝ) (hq : 0 < q) (n : ℕ) : q ^ n = Real.exp ((n : ℝ) * Real.log q)",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem pow_eq_exp_log (q : ℝ) (hq : 0 < q) (n : ℕ) : q ^ n = Real.exp ((n : ℝ) * Real.log q) := by\n  rw [← Real.log_pow, Real.exp_log (pow_pos hq n)]",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "scale_split_uniform_gap",
+      "pathway": 3,
+      "about": "Shape of RG-plus-strong-coupling arguments: a uniform bound beyond some scale plus positivity at the finitely many scales before it gives a uniform gap.",
+      "statement": "theorem scale_split_uniform_gap (Δ : ℕ → ℝ) (hpos : ∀ L, 0 < Δ L) (m : ℝ) (hm : 0 < m) (L₀ : ℕ) (h : ∀ L ≥ L₀, m ≤ Δ L) : ∃ m' > 0, ∀ L, m' ≤ Δ L",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem scale_split_uniform_gap (Δ : ℕ → ℝ) (hpos : ∀ L, 0 < Δ L) (m : ℝ) (hm : 0 < m) (L₀ : ℕ)\n    (h : ∀ L ≥ L₀, m ≤ Δ L) : ∃ m' > 0, ∀ L, m' ≤ Δ L := by\n  have aux : ∀ K : ℕ, ∃ m0 > 0, ∀ L < K, m0 ≤ Δ L := by\n    intro K\n    induction K with\n    | zero => exact ⟨1, one_pos, fun L hL => absurd hL (Nat.not_lt_zero _)⟩\n    | succ k ih =>\n      obtain ⟨m0, hm0, hk⟩ := ih\n      refine ⟨min m0 (Δ k), lt_min hm0 (hpos k), fun L hL => ?_⟩\n      rcases (by omega : L < k ∨ L = k) with hL | hL\n      · exact (min_le_left _ _).trans (hk L hL)\n      · subst hL; exact min_le_right _ _\n  obtain ⟨m0, hm0, hk⟩ := aux L₀\n  refine ⟨min m0 m, lt_min hm0 hm, fun L => ?_⟩\n  by_cases hL : L < L₀\n  · exact (min_le_left _ _).trans (hk L hL)\n  · exact (min_le_right _ _).trans (h L (not_lt.mp hL))",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "polymer_series_bound",
+      "pathway": 4,
+      "about": "Toy cluster expansion: small activity makes the polymer series converge with an explicit bound.",
+      "statement": "theorem polymer_series_bound (z : ℝ) (hz : |z| < 1) (N : ℕ) : ∑ n ∈ Finset.range N, |z| ^ n ≤ 1 / (1 - |z|)",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem polymer_series_bound (z : ℝ) (hz : |z| < 1) (N : ℕ) :\n    ∑ n ∈ Finset.range N, |z| ^ n ≤ 1 / (1 - |z|) := by\n  have h0 : 0 ≤ |z| := abs_nonneg z\n  have h1 : 0 < 1 - |z| := by linarith\n  have key : ∀ K : ℕ, (∑ n ∈ Finset.range K, |z| ^ n) * (1 - |z|) = 1 - |z| ^ K := by\n    intro K\n    induction K with\n    | zero => simp\n    | succ k ih => rw [Finset.sum_range_succ, add_mul, ih]; ring\n  rw [le_div_iff₀ h1, key N]\n  have : 0 ≤ |z| ^ N := pow_nonneg h0 N\n  linarith",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "poincare_variance_decay",
+      "pathway": 5,
+      "about": "Discrete Poincaré-to-decay step: if variance shrinks by a factor (1 - λ) per step, it decays exponentially.",
+      "statement": "theorem poincare_variance_decay (V : ℕ → ℝ) (lam : ℝ) (hl0 : 0 ≤ lam) (hl1 : lam ≤ 1) (h : ∀ n, V (n + 1) ≤ (1 - lam) * V n) : ∀ n, V n ≤ (1 - lam) ^ n * V 0",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem poincare_variance_decay (V : ℕ → ℝ) (lam : ℝ) (_hl0 : 0 ≤ lam) (hl1 : lam ≤ 1)\n    (h : ∀ n, V (n + 1) ≤ (1 - lam) * V n) : ∀ n, V n ≤ (1 - lam) ^ n * V 0 :=\n  contraction_decay V (1 - lam) (by linarith) h",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "holonomy_gauge_abelian",
+      "pathway": 6,
+      "about": "Abelian (e.g. Z2, U(1)) gauge theory: plaquette holonomy is exactly gauge invariant, not just up to conjugation.",
+      "statement": "theorem holonomy_gauge_abelian {G X : Type*} [CommGroup G] (g : X → G) (U : X → X → G) (p : Plaquette X) : holonomy (gaugeTransform g U) p = holonomy U p",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem holonomy_gauge_abelian {G X : Type*} [CommGroup G] (g : X → G) (U : X → X → G)\n    (p : Plaquette X) : holonomy (gaugeTransform g U) p = holonomy U p := by\n  rw [holonomy_gauge, mul_comm (g p.a), mul_assoc, mul_inv_cancel, mul_one]",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "z2_link_square",
+      "pathway": 6,
+      "about": "Z2 links square to one, so the Wilson weight of a Z2 plaquette takes only two values.",
+      "statement": "theorem z2_link_square (u : ℤˣ) : u * u = 1",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem z2_link_square (u : ℤˣ) : u * u = 1 := by\n  norm_num",
+      "origin": "engine search (tactic list)"
+    },
+    {
+      "name": "haar_left_invariant",
+      "pathway": 6,
+      "about": "Counting (Haar) measure on a finite gauge group is invariant under left translation.",
+      "statement": "theorem haar_left_invariant {G : Type*} [Group G] [Fintype G] (f : G → ℝ) (z : G) : ∑ x, f (z * x) = ∑ x, f x",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem haar_left_invariant {G : Type*} [Group G] [Fintype G] (f : G → ℝ) (z : G) :\n    ∑ x, f (z * x) = ∑ x, f x :=\n  Fintype.sum_equiv (Equiv.mulLeft z) _ _ (fun _ => rfl)",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "elitzur_mechanism",
+      "pathway": 8,
+      "about": "Mechanism of Elitzur's theorem: an observable that flips sign under a symmetry of the weight has zero expectation.",
+      "statement": "theorem elitzur_mechanism {G : Type*} [Group G] [Fintype G] (w O : G → ℝ) (z : G) (hw : ∀ x, w (z * x) = w x) (hO : ∀ x, O (z * x) = -O x) : ∑ x, w x * O x = 0",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem elitzur_mechanism {G : Type*} [Group G] [Fintype G] (w O : G → ℝ) (z : G)\n    (hw : ∀ x, w (z * x) = w x) (hO : ∀ x, O (z * x) = -O x) : ∑ x, w x * O x = 0 := by\n  have hS : ∑ x, w (z * x) * O (z * x) = ∑ x, w x * O x :=\n    Fintype.sum_equiv (Equiv.mulLeft z) _ _ (fun _ => rfl)\n  have h2 : ∑ x, w (z * x) * O (z * x) = -∑ x, w x * O x := by\n    simp only [hw, hO, mul_neg, Finset.sum_neg_distrib]\n  linarith",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "z2_plaquette_expectation",
+      "pathway": 8,
+      "about": "One Z2 plaquette with weight exp(β u): expectation of u equals tanh β.",
+      "statement": "theorem z2_plaquette_expectation (β : ℝ) : (∑ b : Bool, spin b * Real.exp (β * spin b)) / (∑ b : Bool, Real.exp (β * spin b)) = Real.tanh β",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem z2_plaquette_expectation (β : ℝ) :\n    (∑ b : Bool, spin b * Real.exp (β * spin b)) / (∑ b : Bool, Real.exp (β * spin b)) =\n      Real.tanh β := by\n  simp only [Fintype.sum_bool, spin, ite_true, ite_false, Bool.false_eq_true]\n  rw [Real.tanh_eq_sinh_div_cosh, Real.sinh_eq, Real.cosh_eq]\n  have : 0 < Real.exp β + Real.exp (-β) := by positivity\n  field_simp\n  ring_nf",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "z2_wilson_loop_area_law",
+      "pathway": 8,
+      "about": "Exact area law for 2D Z2 gauge theory: after 2D gauge fixing, the Wilson loop over A independent plaquettes has expectation tanh(β)^A.",
+      "statement": "theorem z2_wilson_loop_area_law (β : ℝ) (A : ℕ) : (∑ s : Fin A → Bool, ∏ i, (spin (s i) * Real.exp (β * spin (s i)))) / (∑ s : Fin A → Bool, ∏ i, Real.exp (β * spin (s i))) = Real.tanh β ^ A",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem z2_wilson_loop_area_law (β : ℝ) (A : ℕ) :\n    (∑ s : Fin A → Bool, ∏ i, (spin (s i) * Real.exp (β * spin (s i)))) /\n      (∑ s : Fin A → Bool, ∏ i, Real.exp (β * spin (s i))) = Real.tanh β ^ A := by\n  rw [← Fintype.prod_sum (fun (_ : Fin A) (b : Bool) => spin b * Real.exp (β * spin b)),\n    ← Fintype.prod_sum (fun (_ : Fin A) (b : Bool) => Real.exp (β * spin b))]\n  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin]\n  rw [← div_pow, z2_plaquette_expectation]",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "z2_string_tension_pos",
+      "pathway": 8,
+      "about": "The 2D Z2 string tension -log tanh β is positive for every β > 0: confinement at all couplings in 2D.",
+      "statement": "theorem z2_string_tension_pos (β : ℝ) (hβ : 0 < β) : 0 < -Real.log (Real.tanh β)",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem z2_string_tension_pos (β : ℝ) (hβ : 0 < β) : 0 < -Real.log (Real.tanh β) := by\n  have h0 : 0 < Real.tanh β := by\n    rw [Real.tanh_eq_sinh_div_cosh, Real.sinh_eq]\n    have : Real.exp (-β) < Real.exp β := Real.exp_lt_exp.mpr (by linarith)\n    exact div_pos (by linarith) (Real.cosh_pos β)\n  exact neg_pos.mpr (Real.log_neg h0 (Real.tanh_lt_one β))",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "z2_area_law_exponential",
+      "pathway": 8,
+      "about": "Area law in exponential form: tanh(β)^A = exp(-σA) with σ = -log tanh β.",
+      "statement": "theorem z2_area_law_exponential (β : ℝ) (hβ : 0 < β) (A : ℕ) : Real.tanh β ^ A = Real.exp (-(-Real.log (Real.tanh β)) * A)",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem z2_area_law_exponential (β : ℝ) (hβ : 0 < β) (A : ℕ) :\n    Real.tanh β ^ A = Real.exp (-(-Real.log (Real.tanh β)) * A) := by\n  have h0 : 0 < Real.tanh β := by\n    have := z2_string_tension_pos β hβ\n    rw [Real.tanh_eq_sinh_div_cosh, Real.sinh_eq]\n    have : Real.exp (-β) < Real.exp β := Real.exp_lt_exp.mpr (by linarith)\n    exact div_pos (by linarith) (Real.cosh_pos β)\n  rw [neg_neg, mul_comm, ← Real.log_pow, Real.exp_log (pow_pos h0 A)]",
+      "origin": "Claude as proposer, verified by Lean"
+    }
+  ],
+  "_pathways": {
+    "0": "foundations",
+    "1": "formal route via existence proof",
+    "2": "multiscale RG",
+    "3": "RG then strong coupling",
+    "4": "cluster expansion",
+    "5": "stochastic quantization / functional inequalities",
+    "6": "finite gauge groups",
+    "7": "large N",
+    "8": "confinement and center symmetry"
+  },
+  "_phase3_example": {
+    "note": "Phase 3: after adding OpenAI-YM-20261028 as a dependency of your Lean project, set preamble to import its ChallengeSpec and add a mass gap statement written against its definitions as a depth-0 target with pathway 1. Pin Lean to that repo's version.",
+    "preamble": "import Mathlib\nimport ChallengeSpec"
+  },
+  "extra_tactics": [
+    "unfold holonomy gaugeTransform",
+    "simp only [holonomy, gaugeTransform]",
+    "simp only [Finset.sum_range_succ]",
+    "induction n with\n| zero => simp\n| succ n ih => nlinarith [h n, ih, pow_succ q n]"
+  ]
+}

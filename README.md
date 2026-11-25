@@ -13,31 +13,65 @@ along the known routes of attack and records exactly where each route gets stuck
 
 ## Results so far
 
-First run, 25 November 2026: tactic list only (no AI), 10 search nodes per target,
-3,592 proof steps explored. 6 of 16 targets proved and re-checked by Lean.
+**All 22 targets are proved and checked by Lean 4 against Mathlib.** Every proof
+depends only on Lean's three standard axioms (`propext`, `Classical.choice`,
+`Quot.sound`). The full proof library is [`lean/Verified.lean`](lean/Verified.lean).
 
-| Target | Pathway | What it says | Status | Proof found |
-| --- | --- | --- | --- | --- |
-| `jacobi_ring` | foundations | Jacobi identity for commutators (algebra behind the Bianchi identity) | proved | `grind` |
-| `holonomy_gauge` | foundations | Lattice Wilson loops transform by conjugation under gauge transformations | proved | `unfold holonomy gaugeTransform; group` |
-| `two_site_gap` | foundations | Two-site lattice: energy gap 2 above the vacuum | proved | `nlinarith` |
-| `three_site_gap` | foundations | Three-site lattice: energy gap 3 | proved | `nlinarith` |
-| `massive_uniform_gap` | foundations | Massive lattice free field: gap ≥ m², uniform in lattice size | proved | `norm_num; positivity` |
-| `z2_link_square` | finite groups | Z₂ link variables square to one | proved | `norm_num` |
-| `gaps_can_close` | foundations | Positive gaps at every size do not give a uniform gap | open | |
-| `massless_gap_closes` | foundations | Massless lattice field: the gap closes as size grows | open | |
-| `gap_criterion_discrete` | formal route | One common decay rate forces a spectral gap | open | |
-| `contraction_decay` | formal route | Transfer-matrix contraction gives geometric decay | open | |
-| `gap_from_contraction` | formal route | Contraction q < 1 gives gap −log(q)/τ > 0 | open | |
-| `pow_eq_exp_log` | formal route | qⁿ = exp(n log q) | open | |
-| `scale_split_uniform_gap` | RG + strong coupling | Uniform bound past one scale plus finitely many scales gives a uniform gap | open | |
-| `polymer_series_bound` | cluster expansion | Toy polymer series converges with explicit bound | open | |
-| `poincare_variance_decay` | stochastic quantization | Poincaré-type contraction gives exponential variance decay | open | |
-| `holonomy_gauge_abelian` | finite groups | Abelian Wilson loops are exactly gauge invariant | open | |
+| Run | Proposer | Proved | Output |
+| --- | --- | --- | --- |
+| 1 | Tactic list, engine search (3,592 steps) | 6 of 16 | [`results/2026-11-25-static/`](results/2026-11-25-static/) |
+| 2 | Claude as proposer, every proof verified by Lean | remaining 10, plus 6 new | [`results/2026-11-25-claude-proposer/`](results/2026-11-25-claude-proposer/) |
 
-The open targets need induction, case analysis or a short lemma chain, which the
-tactic list cannot plan. They are the job of the AI proposer (`--proposer hybrid`).
-Full output: [`results/2026-11-25-static/`](results/2026-11-25-static/).
+The tactic list proved none of the 6 new results on its own. They need multi-step
+plans (reindexing a sum over a group, hyperbolic identities, a product of sums),
+which is what an AI proposer adds.
+
+### New in run 2: exact confinement in 2D Z₂ gauge theory
+
+In two dimensions, Z₂ lattice gauge theory can be solved exactly. After the standard
+2D gauge fixing, the plaquettes inside a Wilson loop become independent Z₂ variables.
+Run 2 proves the consequences in Lean:
+
+| Theorem | Statement |
+| --- | --- |
+| `z2_plaquette_expectation` | One plaquette with weight exp(βu) has ⟨u⟩ = tanh β |
+| `z2_wilson_loop_area_law` | A loop enclosing A independent plaquettes has ⟨W⟩ = (tanh β)^A |
+| `z2_string_tension_pos` | The string tension σ = −log tanh β is positive for every β > 0 |
+| `z2_area_law_exponential` | ⟨W⟩ = exp(−σA): an area law, so confinement at all couplings |
+| `elitzur_mechanism` | An observable that flips sign under a symmetry of the weight has zero expectation |
+| `haar_left_invariant` | The counting (Haar) measure on a finite gauge group is translation invariant |
+
+These are textbook results, going back to Wegner (1971) and Balian, Drouffe and Itzykson (1975), formalized here. The gauge-fixing
+step, from link variables to independent plaquettes, is taken as given and is the
+natural next target. In four dimensions the analogous statement for SU(N) is the open
+confinement problem.
+
+### All targets
+
+| Target | Pathway | What it says | Found by |
+| --- | --- | --- | --- |
+| `jacobi_ring` | foundations | Jacobi identity for commutators (algebra behind the Bianchi identity) | engine |
+| `holonomy_gauge` | foundations | Lattice Wilson loops transform by conjugation under gauge transformations | engine |
+| `two_site_gap` | foundations | Two-site lattice: energy gap 2 above the vacuum | engine |
+| `three_site_gap` | foundations | Three-site lattice: energy gap 3 | engine |
+| `massive_uniform_gap` | foundations | Massive lattice free field: gap ≥ m², uniform in lattice size | engine |
+| `z2_link_square` | finite groups | Z₂ link variables square to one | engine |
+| `gaps_can_close` | foundations | Positive gaps at every size do not give a uniform gap | Claude |
+| `massless_gap_closes` | foundations | Massless lattice field: a step profile has gradient energy 2/(M+1), so the gap closes | Claude |
+| `gap_criterion_discrete` | formal route | One common decay rate forces a spectral gap | Claude |
+| `contraction_decay` | formal route | Transfer-matrix contraction gives geometric decay | Claude |
+| `gap_from_contraction` | formal route | Contraction q < 1 gives gap −log(q)/τ > 0 | Claude |
+| `pow_eq_exp_log` | formal route | qⁿ = exp(n log q) | Claude |
+| `scale_split_uniform_gap` | RG + strong coupling | Uniform bound past one scale plus finitely many scales gives a uniform gap | Claude |
+| `polymer_series_bound` | cluster expansion | Toy polymer series converges with explicit bound | Claude |
+| `poincare_variance_decay` | stochastic quantization | Poincaré-type contraction gives exponential variance decay | Claude |
+| `holonomy_gauge_abelian` | finite groups | Abelian Wilson loops are exactly gauge invariant | Claude |
+| `haar_left_invariant` | finite groups | Haar measure on a finite group is translation invariant | Claude |
+| `elitzur_mechanism` | confinement | Sign-flipping observables have zero expectation | Claude |
+| `z2_plaquette_expectation` | confinement | ⟨u⟩ = tanh β for one Z₂ plaquette | Claude |
+| `z2_wilson_loop_area_law` | confinement | ⟨W⟩ = (tanh β)^A in 2D Z₂ gauge theory | Claude |
+| `z2_string_tension_pos` | confinement | σ = −log tanh β > 0 for all β > 0 | Claude |
+| `z2_area_law_exponential` | confinement | ⟨W⟩ = exp(−σA) | Claude |
 
 ## How it works
 
@@ -104,9 +138,10 @@ formalization of the *existence* of 4D Yang–Mills theory (repository
 make it possible to state the gap in Lean; see `_phase3_example` in
 `blueprint.json` for how to point this engine at it.
 
-`lean/YangMillsToy.lean` contains standalone proofs of the lattice gauge-invariance
-results. All of it compiles against Mathlib except `trace_sq_gauge_invariant`, which
-needs `Mathlib.LinearAlgebra.Matrix.Trace` and has not been checked yet.
+`lean/Verified.lean` holds every proof above in one file. `lean/YangMillsToy.lean`
+contains the original standalone lattice gauge-invariance results. All of it compiles
+against Mathlib except `trace_sq_gauge_invariant`, which needs
+`Mathlib.LinearAlgebra.Matrix.Trace` and has not been checked yet.
 
 ## Limits
 

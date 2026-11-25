@@ -1,5 +1,5 @@
 {
-  "preamble": "import Mathlib.Analysis.SpecialFunctions.Log.Basic\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.NoncommRing\nimport Mathlib.Tactic.Group\nimport Mathlib.Tactic.FieldSimp\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Abel\nimport Mathlib.Algebra.Order.Archimedean.Basic\nimport Mathlib.Algebra.BigOperators.Group.Finset.Basic\nimport Mathlib.Data.Int.Order.Units\nimport Mathlib.Tactic.GCongr\nopen BigOperators\n\nnamespace YM\n\ndef gaugeTransform {G X : Type*} [Group G] (g : X → G) (U : X → X → G) : X → X → G :=\n  fun x y => g x * U x y * (g y)⁻¹\n\nstructure Plaquette (X : Type*) where\n  a : X\n  b : X\n  c : X\n  d : X\n\ndef holonomy {G X : Type*} [Group G] (U : X → X → G) (p : Plaquette X) : G :=\n  U p.a p.b * U p.b p.c * U p.c p.d * U p.d p.a\n\nend YM\nopen YM",
+  "preamble": "import Mathlib.Analysis.SpecialFunctions.Log.Basic\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.NoncommRing\nimport Mathlib.Tactic.Group\nimport Mathlib.Tactic.FieldSimp\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Abel\nimport Mathlib.Algebra.Order.Archimedean.Basic\nimport Mathlib.Algebra.BigOperators.Group.Finset.Basic\nimport Mathlib.Data.Int.Order.Units\nimport Mathlib.Tactic.GCongr\nopen BigOperators\n\nnamespace YM\n\ndef gaugeTransform {G X : Type*} [Group G] (g : X → G) (U : X → X → G) : X → X → G :=\n  fun x y => g x * U x y * (g y)⁻¹\n\nstructure Plaquette (X : Type*) where\n  a : X\n  b : X\n  c : X\n  d : X\n\ndef holonomy {G X : Type*} [Group G] (U : X → X → G) (p : Plaquette X) : G :=\n  U p.a p.b * U p.b p.c * U p.c p.d * U p.d p.a\n\nend YM\nopen YM\n\n/-- Z₂ spin: true ↦ +1, false ↦ -1. -/\ndef spin (b : Bool) : ℝ := if b then 1 else -1",
   "targets": [
     {
       "name": "jacobi_ring",
@@ -126,6 +126,54 @@
       "pathway": 6,
       "about": "Z2 links square to one, so the Wilson weight of a Z2 plaquette takes only two values.",
       "statement": "theorem z2_link_square (u : ℤˣ) : u * u = 1",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "haar_left_invariant",
+      "pathway": 6,
+      "about": "Counting (Haar) measure on a finite gauge group is invariant under left translation.",
+      "statement": "theorem haar_left_invariant {G : Type*} [Group G] [Fintype G] (f : G → ℝ) (z : G) : ∑ x, f (z * x) = ∑ x, f x",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "elitzur_mechanism",
+      "pathway": 8,
+      "about": "Mechanism of Elitzur's theorem: an observable that flips sign under a symmetry of the weight has zero expectation.",
+      "statement": "theorem elitzur_mechanism {G : Type*} [Group G] [Fintype G] (w O : G → ℝ) (z : G) (hw : ∀ x, w (z * x) = w x) (hO : ∀ x, O (z * x) = -O x) : ∑ x, w x * O x = 0",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "z2_plaquette_expectation",
+      "pathway": 8,
+      "about": "One Z2 plaquette with weight exp(β u): expectation of u equals tanh β.",
+      "statement": "theorem z2_plaquette_expectation (β : ℝ) : (∑ b : Bool, spin b * Real.exp (β * spin b)) / (∑ b : Bool, Real.exp (β * spin b)) = Real.tanh β",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "z2_wilson_loop_area_law",
+      "pathway": 8,
+      "about": "Exact area law for 2D Z2 gauge theory: after 2D gauge fixing, the Wilson loop over A independent plaquettes has expectation tanh(β)^A.",
+      "statement": "theorem z2_wilson_loop_area_law (β : ℝ) (A : ℕ) : (∑ s : Fin A → Bool, ∏ i, (spin (s i) * Real.exp (β * spin (s i)))) / (∑ s : Fin A → Bool, ∏ i, Real.exp (β * spin (s i))) = Real.tanh β ^ A",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "z2_string_tension_pos",
+      "pathway": 8,
+      "about": "The 2D Z2 string tension -log tanh β is positive for every β > 0: confinement at all couplings in 2D.",
+      "statement": "theorem z2_string_tension_pos (β : ℝ) (hβ : 0 < β) : 0 < -Real.log (Real.tanh β)",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "z2_area_law_exponential",
+      "pathway": 8,
+      "about": "Area law in exponential form: tanh(β)^A = exp(-σA) with σ = -log tanh β.",
+      "statement": "theorem z2_area_law_exponential (β : ℝ) (hβ : 0 < β) (A : ℕ) : Real.tanh β ^ A = Real.exp (-(-Real.log (Real.tanh β)) * A)",
       "status": "open",
       "depth": 0
     }
