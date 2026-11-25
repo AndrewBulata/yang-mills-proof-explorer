@@ -1,0 +1,79 @@
+{
+  "preamble": "-- Preamble: lean/Verified.lean Parts A to F plus the Part G definitions (adj, Attached, comp), without the Part G lemmas.\n",
+  "extra_tactics": [
+    "unfold HTE.comp",
+    "simp [HTE.comp]",
+    "simp [HTE.Attached]",
+    "simp [HTE.adj]",
+    "simp [HTE.wilson]",
+    "simp [spin]",
+    "(cases b <;> simp [spin])",
+    "tauto",
+    "exact ⟨h.2.1, h.1, by tauto⟩"
+  ],
+  "targets": [
+    {
+      "name": "e_comp_sub",
+      "pathway": 8,
+      "statement": "theorem e_comp_sub {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P] (bd : P → Finset L) (C : Finset L) (S : Finset P) : HTE.comp bd C S ⊆ S",
+      "status": "proved",
+      "depth": 0,
+      "attempts": 1,
+      "proof": "theorem e_comp_sub {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P] (bd : P → Finset L) (C : Finset L) (S : Finset P) : HTE.comp bd C S ⊆ S := by\n  simp [HTE.comp]"
+    },
+    {
+      "name": "e_mem_comp",
+      "pathway": 8,
+      "statement": "theorem e_mem_comp {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P] (bd : P → Finset L) (C : Finset L) (S : Finset P) (p : P) : p ∈ HTE.comp bd C S ↔ p ∈ S ∧ HTE.Attached bd S C p",
+      "status": "proved",
+      "depth": 0,
+      "attempts": 1,
+      "proof": "theorem e_mem_comp {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P] (bd : P → Finset L) (C : Finset L) (S : Finset P) (p : P) : p ∈ HTE.comp bd C S ↔ p ∈ S ∧ HTE.Attached bd S C p := by\n  simp [HTE.comp]"
+    },
+    {
+      "name": "e_touch",
+      "pathway": 8,
+      "statement": "theorem e_touch {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P] (bd : P → Finset L) (C : Finset L) (S : Finset P) {p : P} {l : L} (hp : p ∈ S) (hlC : l ∈ C) (hl : l ∈ bd p) : HTE.Attached bd S C p",
+      "status": "proved",
+      "depth": 0,
+      "attempts": 1,
+      "proof": "theorem e_touch {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P] (bd : P → Finset L) (C : Finset L) (S : Finset P) {p : P} {l : L} (hp : p ∈ S) (hlC : l ∈ C) (hl : l ∈ bd p) : HTE.Attached bd S C p := by\n  simp [HTE.Attached]\n  grind"
+    },
+    {
+      "name": "e_adj_symm",
+      "pathway": 8,
+      "statement": "theorem e_adj_symm {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P] (bd : P → Finset L) (C : Finset L) (S : Finset P) (p q : P) (h : HTE.adj bd S p q) : HTE.adj bd S q p",
+      "status": "open",
+      "depth": 0,
+      "attempts": 1,
+      "stuck_goal": "L P : Type\ninst✝³ : Fintype L\ninst✝² : DecidableEq L\ninst✝¹ : Fintype P\ninst✝ : DecidableEq P\nbd : P → Finset L\nC : Finset L\nS : Finset P\np q : P\nh : adj bd S p q\n⊢ adj bd S q p"
+    },
+    {
+      "name": "e_wilson_empty",
+      "pathway": 8,
+      "statement": "theorem e_wilson_empty {L : Type} [Fintype L] [DecidableEq L] (U : L → Bool) : HTE.wilson (∅ : Finset L) U = 1",
+      "status": "proved",
+      "depth": 0,
+      "attempts": 1,
+      "proof": "theorem e_wilson_empty {L : Type} [Fintype L] [DecidableEq L] (U : L → Bool) : HTE.wilson (∅ : Finset L) U = 1 := by\n  rfl"
+    },
+    {
+      "name": "e_spin_sq",
+      "pathway": 8,
+      "statement": "theorem e_spin_sq (b : Bool) : spin b ^ 2 = 1",
+      "status": "proved",
+      "depth": 0,
+      "attempts": 1,
+      "proof": "theorem e_spin_sq (b : Bool) : spin b ^ 2 = 1 := by\n  simp [spin]"
+    },
+    {
+      "name": "e_comp_empty_C",
+      "pathway": 8,
+      "statement": "theorem e_comp_empty_C {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P] (bd : P → Finset L) (C : Finset L) (S : Finset P) : HTE.comp bd ∅ S = ∅",
+      "status": "proved",
+      "depth": 0,
+      "attempts": 1,
+      "proof": "theorem e_comp_empty_C {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P] (bd : P → Finset L) (C : Finset L) (S : Finset P) : HTE.comp bd ∅ S = ∅ := by\n  unfold HTE.comp\n  simp [HTE.Attached]"
+    }
+  ]
+}

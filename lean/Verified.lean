@@ -9,6 +9,9 @@
           area bound, specialised to the 4D hypercubic lattice.
   Part F: polymer cancellation and a volume-uniform strong-coupling area law, any dimension,
           given two combinatorial inputs (surface splitting and a c^k count).
+  Part G: the splitting map constructed explicitly for any lattice (the part of a surface
+          connected to the loop), so the area law needs only minimal area and a count of
+          connected attached surfaces.
   Axioms used: only propext, Classical.choice, Quot.sound (Lean's standard three).
 -/
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
@@ -743,5 +746,202 @@ theorem strong_coupling_area_law_4d (β : ℝ) (hβ : 0 ≤ β) (C : Finset (Lin
     HTE.numer (@bd 4 N _) β C / HTE.Z (@bd 4 N _) β ≤
       (c * Real.tanh β) ^ A / (1 - c * Real.tanh β) :=
   HTE.strong_coupling_area_law (@bd 4 N _) β hβ C 𝒯 comp h_sub h_mem h_closed c hc hct A hA hcount
+
+end Hypercubic
+
+
+/-! ## Part G: the splitting map, constructed and verified, any lattice
+
+Part F assumed a map sending each surface S bounded by C to a part `comp S` attached to C
+with a closed remainder. Here it is built explicitly: `comp S` is the set of plaquettes of S
+reachable from a plaquette touching C by steps between plaquettes of S that share a link.
+Everything Part F needed is proved, and `comp S` is shown to be connected and attached to C,
+so only two purely combinatorial facts remain: the minimal area of surfaces bounded by C
+and the number of connected attached surfaces of each size. -/
+
+namespace HTE
+
+set_option linter.unusedSectionVars false
+
+variable {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P]
+
+/-- Two plaquettes of S sharing a link. -/
+def adj (bd : P → Finset L) (S : Finset P) (p q : P) : Prop :=
+  p ∈ S ∧ q ∈ S ∧ ∃ l, l ∈ bd p ∧ l ∈ bd q
+
+/-- p is reachable inside S from a plaquette of S that touches C. -/
+def Attached (bd : P → Finset L) (S : Finset P) (C : Finset L) (p : P) : Prop :=
+  ∃ q, q ∈ S ∧ (∃ l, l ∈ C ∧ l ∈ bd q) ∧ Relation.ReflTransGen (adj bd S) q p
+
+open Classical in
+/-- The part of S attached to C. -/
+noncomputable def comp (bd : P → Finset L) (C : Finset L) (S : Finset P) : Finset P :=
+  S.filter (Attached bd S C)
+
+lemma comp_sub (bd : P → Finset L) (C : Finset L) (S : Finset P) : comp bd C S ⊆ S := by
+  classical
+  unfold comp
+  exact Finset.filter_subset _ _
+
+lemma mem_comp (bd : P → Finset L) (C : Finset L) (S : Finset P) (p : P) :
+    p ∈ comp bd C S ↔ p ∈ S ∧ Attached bd S C p := by
+  classical
+  unfold comp
+  exact Finset.mem_filter
+
+/-- comp S is closed under sharing a link inside S. -/
+lemma comp_closed_step (bd : P → Finset L) (C : Finset L) (S : Finset P) {p q : P} {l : L}
+    (hp : p ∈ comp bd C S) (hq : q ∈ S) (hlp : l ∈ bd p) (hlq : l ∈ bd q) :
+    q ∈ comp bd C S := by
+  rw [mem_comp] at hp ⊢
+  obtain ⟨hpS, r, hr, hrC, hpath⟩ := hp
+  exact ⟨hq, r, hr, hrC, hpath.tail ⟨hpS, hq, l, hlp, hlq⟩⟩
+
+/-- A plaquette of S touching C is attached. -/
+lemma touch_mem_comp (bd : P → Finset L) (C : Finset L) (S : Finset P) {p : P} {l : L}
+    (hp : p ∈ S) (hlC : l ∈ C) (hl : l ∈ bd p) : p ∈ comp bd C S := by
+  rw [mem_comp]
+  exact ⟨hp, p, hp, ⟨l, hlC, hl⟩, Relation.ReflTransGen.refl⟩
+
+/-- Incidence counts split between comp S and the rest. -/
+lemma card_split (bd : P → Finset L) (C : Finset L) (S : Finset P) (l : L) :
+    (S.filter (fun p => l ∈ bd p)).card =
+      ((comp bd C S).filter (fun p => l ∈ bd p)).card +
+        ((S \ comp bd C S).filter (fun p => l ∈ bd p)).card := by
+  classical
+  rw [← Finset.card_filter_add_card_filter_not (s := S.filter (fun p => l ∈ bd p))
+    (fun p => p ∈ comp bd C S)]
+  congr 2
+  · ext p
+    simp only [Finset.mem_filter]
+    constructor
+    · rintro ⟨⟨_, h1⟩, h2⟩; exact ⟨h2, h1⟩
+    · rintro ⟨h2, h1⟩; exact ⟨⟨comp_sub bd C S h2, h1⟩, h2⟩
+  · ext p
+    simp only [Finset.mem_filter, Finset.mem_sdiff]
+    tauto
+
+/-- At each link, the remainder S \ comp S has either no incidence, or all of S's incidence
+at a link outside C. -/
+lemma rest_incidence (bd : P → Finset L) (C : Finset L) (S : Finset P) (l : L) :
+    ((S \ comp bd C S).filter (fun p => l ∈ bd p)).card = 0 ∨
+      (((S \ comp bd C S).filter (fun p => l ∈ bd p)).card =
+          (S.filter (fun p => l ∈ bd p)).card ∧ l ∉ C) := by
+  by_cases h : ∃ p ∈ comp bd C S, l ∈ bd p
+  · left
+    obtain ⟨p, hp, hlp⟩ := h
+    rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+    intro q hq hlq
+    rw [Finset.mem_sdiff] at hq
+    exact hq.2 (comp_closed_step bd C S hp hq.1 hlp hlq)
+  · push Not at h
+    have hzero : ((comp bd C S).filter (fun p => l ∈ bd p)).card = 0 := by
+      rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+      exact fun p hp hl => h p hp hl
+    by_cases hlC : l ∈ C
+    · left
+      rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+      intro q hq hlq
+      rw [Finset.mem_sdiff] at hq
+      exact hq.2 (touch_mem_comp bd C S hq.1 hlC hlq)
+    · right
+      refine ⟨?_, hlC⟩
+      have := card_split bd C S l
+      omega
+
+/-- **The remainder is closed.** -/
+theorem rest_closed (bd : P → Finset L) (C : Finset L) (S : Finset P)
+    (hS : HasBoundary bd S C) : HasBoundary bd (S \ comp bd C S) ∅ := by
+  intro l
+  have h := hS l
+  simp only [mult, Finset.notMem_empty, ite_false, zero_add] at h ⊢
+  rcases rest_incidence bd C S l with h0 | ⟨heq, hlC⟩
+  · rw [h0]; exact ⟨0, rfl⟩
+  · rw [heq]; simpa [hlC] using h
+
+/-- **The attached part has the same boundary C.** -/
+theorem comp_boundary (bd : P → Finset L) (C : Finset L) (S : Finset P)
+    (hS : HasBoundary bd S C) : HasBoundary bd (comp bd C S) C := by
+  intro l
+  have h := hS l
+  have hr := rest_closed bd C S hS l
+  have hs := card_split bd C S l
+  simp only [mult, Finset.notMem_empty, ite_false, zero_add] at h hr ⊢
+  rw [Nat.even_iff] at h hr ⊢
+  split_ifs at h ⊢ <;> omega
+
+/-- **comp S is connected and attached in its own right**: every plaquette is reachable
+from a plaquette touching C through plaquettes of comp S. -/
+theorem comp_attached (bd : P → Finset L) (C : Finset L) (S : Finset P) (p : P)
+    (hp : p ∈ comp bd C S) : Attached bd (comp bd C S) C p := by
+  obtain ⟨_, q, hq, hqC, hpath⟩ := (mem_comp bd C S p).mp hp
+  have hq' : q ∈ comp bd C S := by
+    obtain ⟨l, hlC, hl⟩ := hqC
+    exact touch_mem_comp bd C S hq hlC hl
+  have key : ∀ x, Relation.ReflTransGen (adj bd S) q x →
+      x ∈ comp bd C S ∧ Relation.ReflTransGen (adj bd (comp bd C S)) q x := by
+    intro x hx
+    induction hx with
+    | refl => exact ⟨hq', Relation.ReflTransGen.refl⟩
+    | tail _ hyz ih =>
+      obtain ⟨hy, hpath'⟩ := ih
+      obtain ⟨_, hzS, l, hly, hlz⟩ := hyz
+      have hz := comp_closed_step bd C S hy hzS hly hlz
+      exact ⟨hz, hpath'.tail ⟨hy, hz, l, hly, hlz⟩⟩
+  exact ⟨q, hq', hqC, (key p hpath).2⟩
+
+open Classical in
+/-- Connected surfaces attached to C (the lattice animals that need counting). -/
+noncomputable def connAttached (bd : P → Finset L) (C : Finset L) : Finset (Finset P) :=
+  (Finset.univ : Finset P).powerset.filter (fun T => ∀ p ∈ T, Attached bd T C p)
+
+open Classical in
+/-- **Strong-coupling area law, any dimension, uniform in the volume.** The only inputs are
+two combinatorial facts: every surface bounded by C has at least A plaquettes (minimal
+area), and there are at most c^k connected attached surfaces of size k (lattice animals). -/
+theorem strong_coupling_area_law_connected (bd : P → Finset L) (β : ℝ) (hβ : 0 ≤ β)
+    (C : Finset L) (c : ℝ) (hc : 0 ≤ c) (hct : c * Real.tanh β < 1) (A : ℕ)
+    (hA : ∀ T : Finset P, HasBoundary bd T C → A ≤ T.card)
+    (hcount : ∀ k : ℕ, (((connAttached bd C).filter (fun T => T.card = k)).card : ℝ) ≤ c ^ k) :
+    numer bd β C / Z bd β ≤ (c * Real.tanh β) ^ A / (1 - c * Real.tanh β) := by
+  set 𝒯 := ((Finset.univ : Finset P).powerset.filter (fun S => HasBoundary bd S C)).image
+    (comp bd C) with h𝒯
+  have hmem : ∀ S, HasBoundary bd S C → comp bd C S ∈ 𝒯 := fun S hS =>
+    Finset.mem_image.mpr ⟨S, Finset.mem_filter.mpr
+      ⟨Finset.mem_powerset.mpr (Finset.subset_univ _), hS⟩, rfl⟩
+  have h𝒯sub : 𝒯 ⊆ connAttached bd C := by
+    intro T hT
+    obtain ⟨S, _, rfl⟩ := Finset.mem_image.mp hT
+    unfold connAttached
+    exact Finset.mem_filter.mpr ⟨Finset.mem_powerset.mpr (Finset.subset_univ _),
+      fun p hp => comp_attached bd C S p hp⟩
+  have hA𝒯 : ∀ T ∈ 𝒯, A ≤ T.card := by
+    intro T hT
+    obtain ⟨S, hS, rfl⟩ := Finset.mem_image.mp hT
+    exact hA _ (comp_boundary bd C S (Finset.mem_filter.mp hS).2)
+  have hcount𝒯 : ∀ k : ℕ, ((𝒯.filter (fun T => T.card = k)).card : ℝ) ≤ c ^ k := by
+    intro k
+    refine le_trans ?_ (hcount k)
+    exact_mod_cast Finset.card_le_card (Finset.filter_subset_filter _ h𝒯sub)
+  exact strong_coupling_area_law bd β hβ C 𝒯 (comp bd C) (comp_sub bd C) hmem
+    (rest_closed bd C) c hc hct A hA𝒯 hcount𝒯
+
+end HTE
+
+namespace Hypercubic
+
+variable (N : ℕ) [NeZero N]
+
+open Classical in
+/-- **4D, uniform in the volume**: the strong-coupling area law on the 4D hypercubic lattice,
+with only the minimal-area and lattice-animal facts as inputs. -/
+theorem strong_coupling_area_law_4d_connected (β : ℝ) (hβ : 0 ≤ β) (C : Finset (Link 4 N))
+    (c : ℝ) (hc : 0 ≤ c) (hct : c * Real.tanh β < 1) (A : ℕ)
+    (hA : ∀ T : Finset (Plaq 4 N), HTE.HasBoundary (@bd 4 N _) T C → A ≤ T.card)
+    (hcount : ∀ k : ℕ,
+      (((HTE.connAttached (@bd 4 N _) C).filter (fun T => T.card = k)).card : ℝ) ≤ c ^ k) :
+    HTE.numer (@bd 4 N _) β C / HTE.Z (@bd 4 N _) β ≤
+      (c * Real.tanh β) ^ A / (1 - c * Real.tanh β) :=
+  HTE.strong_coupling_area_law_connected (@bd 4 N _) β hβ C c hc hct A hA hcount
 
 end Hypercubic

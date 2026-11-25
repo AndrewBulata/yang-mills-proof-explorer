@@ -13,7 +13,7 @@ along the known routes of attack and records exactly where each route gets stuck
 
 ## Results so far
 
-**All 29 engine targets are proved and checked by Lean 4 against Mathlib, plus a 13-theorem strong-coupling library for any dimension.** Every proof
+**All 29 engine targets are proved and checked by Lean 4 against Mathlib, plus a strong-coupling library for any dimension (Parts E to G of `lean/Verified.lean`).** Every proof
 depends only on Lean's three standard axioms (`propext`, `Classical.choice`,
 `Quot.sound`). The full proof library is [`lean/Verified.lean`](lean/Verified.lean).
 
@@ -22,8 +22,11 @@ depends only on Lean's three standard axioms (`propext`, `Classical.choice`,
 | 1 | Tactic list, engine search (3,592 steps) | 6 of 16 | [`results/2026-11-25-static/`](results/2026-11-25-static/) |
 | 2 | Claude as proposer, every proof verified by Lean | remaining 10, plus 13 new | [`results/2026-11-25-claude-proposer/`](results/2026-11-25-claude-proposer/) |
 | 3 | Conjecture mode: engine invents and tests its own statements | 45 explored: 16 proved, 18 refuted, 11 open | [`results/2026-11-25-conjecture-run/`](results/2026-11-25-conjecture-run/) |
+| 4 | Engine search on Part G's basic lemmas, given only the definitions | 6 of 7 | [`results/2026-11-25-engine-part-g/`](results/2026-11-25-engine-part-g/) |
 
-The tactic list proved none of the 6 new results on its own. They need multi-step
+Parts B to G were written by Claude acting as proposer and checked by Lean outside the
+search loop; run 4 put the engine back on Part G's basic lemmas, where it found its own
+proofs for 6 of 7. The tactic list proved none of the 6 new results of run 2 on its own. They need multi-step
 plans (reindexing a sum over a group, hyperbolic identities, a product of sums),
 which is what an AI proposer adds.
 
@@ -98,11 +101,29 @@ law that does not depend on the volume:
 | `HTE.string_tension_exponential` | String tension σ = −log(c tanh β) > 0, and ⟨W_C⟩ ≤ e^{−σA} / (1 − c tanh β) |
 | `Hypercubic.strong_coupling_area_law_4d` | The same on the 4D hypercubic lattice |
 
-These theorems take two combinatorial facts as hypotheses: a map sending each surface to
-its part attached to C (with a closed remainder), and a bound of c^k on attached surfaces of
-size k (a lattice-animal count). Proving both for the hypercubic lattice would give a fully
-formal, volume-uniform confinement result at strong coupling in 4D. From there, the same
-machinery applied to plaquette–plaquette correlations gives the strong-coupling mass gap.
+**The splitting map, constructed** (Part G). The part of a surface attached to the loop is
+built explicitly for any lattice: the plaquettes reachable from one touching C through
+plaquettes that share links. Lean verifies that the remainder is closed, that the attached
+part has boundary C, and that it is connected and touches C. This removes the splitting
+hypothesis entirely:
+
+| Theorem | Statement |
+| --- | --- |
+| `HTE.rest_closed` | The remainder S \ comp S is a closed surface |
+| `HTE.comp_boundary` | The attached part comp S has the same boundary C |
+| `HTE.comp_attached` | comp S is connected and attached to C in its own right |
+| `HTE.strong_coupling_area_law_connected` | Volume-uniform area law from two inputs only |
+| `Hypercubic.strong_coupling_area_law_4d_connected` | The same on the 4D lattice |
+
+**What remains for a complete 4D strong-coupling confinement theorem** is two pure
+combinatorics facts about the hypercubic lattice, now the only hypotheses:
+
+1. **Minimal area**: every surface bounded by the loop C has at least A plaquettes.
+2. **Lattice animals**: at most c^k connected surfaces of k plaquettes are attached to C.
+
+Both are standard results; neither involves physics or analysis. After them, the same
+surface machinery applied to plaquette–plaquette correlations gives the strong-coupling
+mass gap.
 
 ### Conjecture mode: the engine proposes its own statements
 

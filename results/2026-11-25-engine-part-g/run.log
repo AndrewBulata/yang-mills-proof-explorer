@@ -1,0 +1,34 @@
+
+=== round 1: 7 open targets ===
+
+> e_comp_sub  (depth 0, attempt 1)
+  PROVED
+
+> e_mem_comp  (depth 0, attempt 1)
+  PROVED
+
+> e_touch  (depth 0, attempt 1)
+  PROVED
+
+> e_adj_symm  (depth 0, attempt 1)
+  not yet. stuck at: L P : Type
+inst✝³ : Fintype L
+inst✝² : DecidableEq L
+inst✝¹ : Fintype P
+inst✝ : DecidableEq P
+bd : P → Finset L
+C : Finset L
+S : Finset P
+p q : P
+h : adj bd S p
+
+> e_wilson_empty  (depth 0, attempt 1)
+  PROVED
+
+> e_spin_sq  (depth 0, attempt 1)
+  PROVED
+
+> e_comp_empty_C  (depth 0, attempt 1)
+  PROVED
+
+Summary: 6/7 proved. Blueprint saved to /home/claude/partG_engine.json
