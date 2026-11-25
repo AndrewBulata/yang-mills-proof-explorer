@@ -7,6 +7,8 @@
   Part E: high-temperature (strong-coupling) expansion of Z₂ lattice gauge theory on any
           finite lattice in any dimension, Wilson-loop positivity, and a finite-volume
           area bound, specialised to the 4D hypercubic lattice.
+  Part F: polymer cancellation and a volume-uniform strong-coupling area law, any dimension,
+          given two combinatorial inputs (surface splitting and a c^k count).
   Axioms used: only propext, Classical.choice, Quot.sound (Lean's standard three).
 -/
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
@@ -589,5 +591,157 @@ theorem area_bound_4d (β : ℝ) (hβ : 0 ≤ β) (C : Finset (Link 4 N)) (A : �
 theorem wilson_nonneg_4d (β : ℝ) (hβ : 0 ≤ β) (C : Finset (Link 4 N)) :
     0 ≤ HTE.numer (@bd 4 N _) β C / HTE.Z (@bd 4 N _) β :=
   HTE.wilson_nonneg (@bd 4 N _) β hβ C
+
+end Hypercubic
+
+
+/-! ## Part F: polymer cancellation and a volume-uniform area law
+
+Part E bounds ⟨W_C⟩ by a sum over *all* surfaces bounded by C, which grows with the volume.
+The polymer argument fixes this. Split every surface S with ∂S = C into the piece `comp S`
+attached to C and a closed remainder S \ comp S. The closed remainders cancel against the
+partition function, leaving a sum over attached surfaces only. If there are at most c^k
+attached surfaces of size k, the result is an area law that does not depend on the volume.
+
+The splitting map and the c^k count are hypotheses here: they are pure lattice combinatorics
+(connected components and lattice-animal counting), the next milestone. -/
+
+namespace HTE
+
+set_option linter.unusedSectionVars false
+
+variable {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P]
+
+/-- **Polymer cancellation.** The closed parts of surfaces bounded by C factor out as the
+partition function's surface sum. -/
+theorem polymer_cancellation (bd : P → Finset L) (β : ℝ) (hβ : 0 ≤ β) (C : Finset L)
+    (𝒯 : Finset (Finset P)) (comp : Finset P → Finset P)
+    (h_sub : ∀ S, comp S ⊆ S)
+    (h_mem : ∀ S, HasBoundary bd S C → comp S ∈ 𝒯)
+    (h_closed : ∀ S, HasBoundary bd S C → HasBoundary bd (S \ comp S) ∅) :
+    surf bd β C ≤ (∑ T ∈ 𝒯, Real.tanh β ^ T.card) * surf bd β ∅ := by
+  have ht := tanh_nonneg' β hβ
+  unfold surf
+  set FC := (Finset.univ : Finset P).powerset.filter (fun S => HasBoundary bd S C)
+  set F0 := (Finset.univ : Finset P).powerset.filter (fun S => HasBoundary bd S ∅)
+  let φ : Finset P → Finset P × Finset P := fun S => (comp S, S \ comp S)
+  let g : Finset P × Finset P → ℝ := fun x => Real.tanh β ^ x.1.card * Real.tanh β ^ x.2.card
+  have hinj : Set.InjOn φ FC := by
+    intro S₁ _ S₂ _ h
+    have h1 : comp S₁ = comp S₂ := congrArg Prod.fst h
+    have h2 : S₁ \ comp S₁ = S₂ \ comp S₂ := congrArg Prod.snd h
+    calc S₁ = comp S₁ ∪ S₁ \ comp S₁ := (Finset.union_sdiff_of_subset (h_sub S₁)).symm
+      _ = comp S₂ ∪ S₂ \ comp S₂ := by rw [h2, h1]
+      _ = S₂ := Finset.union_sdiff_of_subset (h_sub S₂)
+  have hsplit : ∀ S ∈ FC, Real.tanh β ^ S.card = g (φ S) := by
+    intro S _
+    simp only [g, φ]
+    rw [← pow_add, add_comm, Finset.card_sdiff_add_card_eq_card (h_sub S)]
+  have himg : FC.image φ ⊆ 𝒯 ×ˢ F0 := by
+    intro x hx
+    obtain ⟨S, hS, rfl⟩ := Finset.mem_image.mp hx
+    have hb : HasBoundary bd S C := (Finset.mem_filter.mp hS).2
+    refine Finset.mem_product.mpr ⟨h_mem S hb, ?_⟩
+    exact Finset.mem_filter.mpr ⟨Finset.mem_powerset.mpr (Finset.subset_univ _), h_closed S hb⟩
+  calc ∑ S ∈ FC, Real.tanh β ^ S.card = ∑ S ∈ FC, g (φ S) := Finset.sum_congr rfl hsplit
+    _ = ∑ x ∈ FC.image φ, g x := (Finset.sum_image hinj).symm
+    _ ≤ ∑ x ∈ 𝒯 ×ˢ F0, g x :=
+        Finset.sum_le_sum_of_subset_of_nonneg himg
+          (fun x _ _ => mul_nonneg (pow_nonneg ht _) (pow_nonneg ht _))
+    _ = (∑ T ∈ 𝒯, Real.tanh β ^ T.card) * ∑ R ∈ F0, Real.tanh β ^ R.card := by
+        rw [Finset.sum_product, Finset.sum_mul_sum]
+
+/-- ⟨W_C⟩ is bounded by the sum over attached surfaces alone. -/
+theorem wilson_le_polymer (bd : P → Finset L) (β : ℝ) (hβ : 0 ≤ β) (C : Finset L)
+    (𝒯 : Finset (Finset P)) (comp : Finset P → Finset P)
+    (h_sub : ∀ S, comp S ⊆ S)
+    (h_mem : ∀ S, HasBoundary bd S C → comp S ∈ 𝒯)
+    (h_closed : ∀ S, HasBoundary bd S C → HasBoundary bd (S \ comp S) ∅) :
+    numer bd β C / Z bd β ≤ ∑ T ∈ 𝒯, Real.tanh β ^ T.card := by
+  rw [wilson_ratio]
+  have h1 := surf_closed_ge_one bd β hβ
+  rw [div_le_iff₀ (by linarith)]
+  exact polymer_cancellation bd β hβ C 𝒯 comp h_sub h_mem h_closed
+
+/-- Geometric tail: Σ_{A ≤ k < n} r^k ≤ r^A / (1 - r). -/
+lemma geom_tail (r : ℝ) (hr0 : 0 ≤ r) (hr1 : r < 1) (A n : ℕ) :
+    ∑ k ∈ Finset.range n, (if A ≤ k then r ^ k else 0) ≤ r ^ A / (1 - r) := by
+  rw [← Finset.sum_filter]
+  have hI : (Finset.range n).filter (fun k => A ≤ k) = Finset.Ico A n := by
+    ext k
+    simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_Ico]
+    tauto
+  rw [hI, Finset.sum_Ico_eq_sum_range]
+  simp only [pow_add, ← Finset.mul_sum]
+  rw [div_eq_mul_one_div]
+  have hb := polymer_series_bound r (by rw [abs_of_nonneg hr0]; exact hr1) (n - A)
+  rw [abs_of_nonneg hr0] at hb
+  exact mul_le_mul_of_nonneg_left hb (pow_nonneg hr0 _)
+
+/-- **Counting gives a uniform area law.** If every attached surface has at least A
+plaquettes and there are at most c^k of size k, the sum is at most (ct)^A / (1 - ct),
+independent of the volume. -/
+theorem area_law_uniform (𝒯 : Finset (Finset P)) (t c : ℝ) (ht : 0 ≤ t) (hc : 0 ≤ c)
+    (hct : c * t < 1) (A : ℕ) (hA : ∀ T ∈ 𝒯, A ≤ T.card)
+    (hcount : ∀ k : ℕ, ((𝒯.filter (fun T => T.card = k)).card : ℝ) ≤ c ^ k) :
+    ∑ T ∈ 𝒯, t ^ T.card ≤ (c * t) ^ A / (1 - c * t) := by
+  have hmaps : ∀ T ∈ 𝒯, T.card ∈ Finset.range (Fintype.card P + 1) :=
+    fun T _ => Finset.mem_range.mpr (Nat.lt_succ_of_le (Finset.card_le_univ T))
+  rw [← Finset.sum_fiberwise_of_maps_to hmaps]
+  refine le_trans (Finset.sum_le_sum (fun k _ => ?_)) (geom_tail (c * t) (mul_nonneg hc ht) hct A _)
+  have hk' : ∀ T ∈ 𝒯.filter (fun T => T.card = k), t ^ T.card = t ^ k :=
+    fun T hT => by rw [(Finset.mem_filter.mp hT).2]
+  have hfib : ∑ T ∈ 𝒯.filter (fun T => T.card = k), t ^ T.card =
+      ((𝒯.filter (fun T => T.card = k)).card : ℝ) * t ^ k := by
+    rw [Finset.sum_congr rfl hk', Finset.sum_const, nsmul_eq_mul]
+  split_ifs with hk
+  · rw [hfib, mul_pow]
+    exact mul_le_mul_of_nonneg_right (hcount k) (pow_nonneg ht k)
+  · have hempty : 𝒯.filter (fun T => T.card = k) = ∅ := by
+      apply Finset.filter_eq_empty_iff.mpr
+      intro T hT hTk
+      exact hk (by rw [← hTk]; exact hA T hT)
+    rw [hfib, hempty]
+    simp
+
+/-- **Strong-coupling area law, any dimension, uniform in the volume**, given the two
+combinatorial inputs (a splitting into attached and closed parts, and a c^k count). -/
+theorem strong_coupling_area_law (bd : P → Finset L) (β : ℝ) (hβ : 0 ≤ β) (C : Finset L)
+    (𝒯 : Finset (Finset P)) (comp : Finset P → Finset P)
+    (h_sub : ∀ S, comp S ⊆ S)
+    (h_mem : ∀ S, HasBoundary bd S C → comp S ∈ 𝒯)
+    (h_closed : ∀ S, HasBoundary bd S C → HasBoundary bd (S \ comp S) ∅)
+    (c : ℝ) (hc : 0 ≤ c) (hct : c * Real.tanh β < 1) (A : ℕ) (hA : ∀ T ∈ 𝒯, A ≤ T.card)
+    (hcount : ∀ k : ℕ, ((𝒯.filter (fun T => T.card = k)).card : ℝ) ≤ c ^ k) :
+    numer bd β C / Z bd β ≤ (c * Real.tanh β) ^ A / (1 - c * Real.tanh β) :=
+  (wilson_le_polymer bd β hβ C 𝒯 comp h_sub h_mem h_closed).trans
+    (area_law_uniform 𝒯 _ c (tanh_nonneg' β hβ) hc hct A hA hcount)
+
+/-- The string tension σ = -log(c tanh β) is positive throughout the strong-coupling regime
+0 < c tanh β < 1, and the bound reads ⟨W_C⟩ ≤ exp(-σ A) / (1 - c tanh β). -/
+theorem string_tension_exponential (c t : ℝ) (h0 : 0 < c * t) (h1 : c * t < 1) (A : ℕ) :
+    0 < -Real.log (c * t) ∧
+      (c * t) ^ A / (1 - c * t) = Real.exp (-(-Real.log (c * t)) * A) / (1 - c * t) := by
+  refine ⟨neg_pos.mpr (Real.log_neg h0 h1), ?_⟩
+  rw [neg_neg, mul_comm (Real.log (c * t)) (A : ℝ), ← Real.log_pow, Real.exp_log (pow_pos h0 A)]
+
+end HTE
+
+namespace Hypercubic
+
+variable (N : ℕ) [NeZero N]
+
+/-- The volume-uniform strong-coupling area law on the 4D hypercubic lattice, given the
+two combinatorial inputs. Discharging them for this lattice is the next milestone. -/
+theorem strong_coupling_area_law_4d (β : ℝ) (hβ : 0 ≤ β) (C : Finset (Link 4 N))
+    (𝒯 : Finset (Finset (Plaq 4 N))) (comp : Finset (Plaq 4 N) → Finset (Plaq 4 N))
+    (h_sub : ∀ S, comp S ⊆ S)
+    (h_mem : ∀ S, HTE.HasBoundary (@bd 4 N _) S C → comp S ∈ 𝒯)
+    (h_closed : ∀ S, HTE.HasBoundary (@bd 4 N _) S C → HTE.HasBoundary (@bd 4 N _) (S \ comp S) ∅)
+    (c : ℝ) (hc : 0 ≤ c) (hct : c * Real.tanh β < 1) (A : ℕ) (hA : ∀ T ∈ 𝒯, A ≤ T.card)
+    (hcount : ∀ k : ℕ, ((𝒯.filter (fun T => T.card = k)).card : ℝ) ≤ c ^ k) :
+    HTE.numer (@bd 4 N _) β C / HTE.Z (@bd 4 N _) β ≤
+      (c * Real.tanh β) ^ A / (1 - c * Real.tanh β) :=
+  HTE.strong_coupling_area_law (@bd 4 N _) β hβ C 𝒯 comp h_sub h_mem h_closed c hc hct A hA hcount
 
 end Hypercubic

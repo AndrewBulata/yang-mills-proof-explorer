@@ -84,10 +84,25 @@ boundary; the periodic d-dimensional hypercubic lattice is defined as an instanc
 | `HTE.area_bound` | If every surface bounded by C has at least A plaquettes, ⟨W_C⟩ ≤ 2^{\|P\|} tanh(β)^A |
 | `Hypercubic.area_bound_4d`, `wilson_nonneg_4d` | The same, on the 4D hypercubic lattice |
 
-What is still missing for a 4D mass gap at strong coupling: the factor 2^{|P|} grows with
-the volume. Removing it is the polymer (cluster) expansion: split each surface into the
-piece attached to C and closed pieces elsewhere, cancel the closed pieces against Z, and
-count connected surfaces of size k by c^k. That combinatorial layer is the next milestone.
+**Polymer cancellation and a volume-uniform area law** (Part F). Split each surface
+bounded by C into the piece attached to C and a closed remainder; the closed remainders
+cancel against the partition function. Then a count of attached surfaces gives an area
+law that does not depend on the volume:
+
+| Theorem | Statement |
+| --- | --- |
+| `HTE.polymer_cancellation` | Σ_{∂S=C} t^{\|S\|} ≤ (Σ_{attached T} t^{\|T\|}) · Σ_{∂R=∅} t^{\|R\|} |
+| `HTE.wilson_le_polymer` | ⟨W_C⟩ ≤ Σ over attached surfaces only |
+| `HTE.area_law_uniform` | ≤ c^k attached surfaces of size k, each ≥ A plaquettes ⇒ sum ≤ (ct)^A / (1 − ct) |
+| `HTE.strong_coupling_area_law` | ⟨W_C⟩ ≤ (c tanh β)^A / (1 − c tanh β), uniform in volume, whenever c tanh β < 1 |
+| `HTE.string_tension_exponential` | String tension σ = −log(c tanh β) > 0, and ⟨W_C⟩ ≤ e^{−σA} / (1 − c tanh β) |
+| `Hypercubic.strong_coupling_area_law_4d` | The same on the 4D hypercubic lattice |
+
+These theorems take two combinatorial facts as hypotheses: a map sending each surface to
+its part attached to C (with a closed remainder), and a bound of c^k on attached surfaces of
+size k (a lattice-animal count). Proving both for the hypercubic lattice would give a fully
+formal, volume-uniform confinement result at strong coupling in 4D. From there, the same
+machinery applied to plaquette–plaquette correlations gives the strong-coupling mass gap.
 
 ### Conjecture mode: the engine proposes its own statements
 
