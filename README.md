@@ -13,7 +13,7 @@ along the known routes of attack and records exactly where each route gets stuck
 
 ## Results so far
 
-**All 29 targets are proved and checked by Lean 4 against Mathlib.** Every proof
+**All 29 engine targets are proved and checked by Lean 4 against Mathlib, plus a 13-theorem strong-coupling library for any dimension.** Every proof
 depends only on Lean's three standard axioms (`propext`, `Classical.choice`,
 `Quot.sound`). The full proof library is [`lean/Verified.lean`](lean/Verified.lean).
 
@@ -64,6 +64,30 @@ The transfer matrix `(T f)(s) = Σ_{s'} exp(β s s') f(s')` acts on one Z₂ var
 
 As with the area law, the reduction of the 2D theory to this single-variable transfer
 matrix (axial gauge) is taken as given.
+
+### Strong-coupling expansion in any dimension, including 4D
+
+The first layer of the Osterwalder–Seiler strong-coupling analysis, proved for Z₂ lattice
+gauge theory on **any finite lattice in any dimension** (Part E of `lean/Verified.lean`).
+A lattice is a finite set of links, a finite set of plaquettes, and each plaquette's
+boundary; the periodic d-dimensional hypercubic lattice is defined as an instance.
+
+| Theorem | Statement |
+| --- | --- |
+| `HTE.exp_pm` | e^{βu} = cosh β (1 + u tanh β) for u = ±1 |
+| `HTE.orthogonality` | Summing over all link configurations kills every odd power of a link spin |
+| `HTE.numer_expand` | Σ_U W_C e^{βΣu_p} = cosh(β)^{\|P\|} 2^{\|L\|} Σ_{S: ∂S = C} tanh(β)^{\|S\|} |
+| `HTE.Z_expand` | The partition function is a sum over closed plaquette surfaces |
+| `HTE.wilson_ratio` | ⟨W_C⟩ = (surfaces bounded by C) / (closed surfaces) |
+| `HTE.wilson_nonneg` | ⟨W_C⟩ ≥ 0 for β ≥ 0 (a Griffiths-type inequality) |
+| `HTE.wilson_le_surf` | ⟨W_C⟩ ≤ Σ_{S: ∂S = C} tanh(β)^{\|S\|} |
+| `HTE.area_bound` | If every surface bounded by C has at least A plaquettes, ⟨W_C⟩ ≤ 2^{\|P\|} tanh(β)^A |
+| `Hypercubic.area_bound_4d`, `wilson_nonneg_4d` | The same, on the 4D hypercubic lattice |
+
+What is still missing for a 4D mass gap at strong coupling: the factor 2^{|P|} grows with
+the volume. Removing it is the polymer (cluster) expansion: split each surface into the
+piece attached to C and closed pieces elsewhere, cancel the closed pieces against Z, and
+count connected surfaces of size k by c^k. That combinatorial layer is the next milestone.
 
 ### Conjecture mode: the engine proposes its own statements
 

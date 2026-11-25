@@ -4,6 +4,9 @@
   Part B: Haar invariance, the Elitzur mechanism, exact area law of 2D Z₂ gauge theory.
   Part C: transfer-matrix spectrum and mass gap of 2D Z₂ gauge theory at every coupling.
   Part D: the complete-graph gap for every n, generalised from conjecture-mode results.
+  Part E: high-temperature (strong-coupling) expansion of Z₂ lattice gauge theory on any
+          finite lattice in any dimension, Wilson-loop positivity, and a finite-volume
+          area bound, specialised to the 4D hypercubic lattice.
   Axioms used: only propext, Classical.choice, Quot.sound (Lean's standard three).
 -/
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
@@ -335,3 +338,256 @@ theorem complete_graph_gap_all (n : ℕ) (v : Fin n → ℝ) (h : ∑ i, v i = 0
   rw [h1]
   simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← Finset.mul_sum]
   ring
+
+
+/-! ## Part E: high-temperature expansion of Z₂ lattice gauge theory, any dimension
+
+A lattice is abstract here: a finite set of links `L`, a finite set of plaquettes `P`, and
+for each plaquette its boundary `bd p : Finset L`. The hypercubic lattice in d dimensions
+(defined at the end, d = 4 included) is one instance.
+
+Main result (`numer_expand`): for every Wilson loop C,
+
+  Σ_U W_C(U) e^{β Σ_p u_p(U)} = cosh(β)^|P| · 2^|L| · Σ_{S ⊆ P, ∂S = C} tanh(β)^|S|
+
+so ⟨W_C⟩ is a ratio of sums over plaquette surfaces S with boundary C, weighted by
+tanh(β)^|S|. This is the starting point of the Osterwalder–Seiler strong-coupling analysis. -/
+
+namespace HTE
+
+set_option linter.unusedSectionVars false
+
+variable {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P]
+
+/-- Plaquette variable: product of the Z₂ link spins around its boundary. -/
+def plaq (bd : P → Finset L) (U : L → Bool) (p : P) : ℝ := ∏ l ∈ bd p, spin (U l)
+
+/-- Wilson-action Boltzmann weight. -/
+noncomputable def weight (bd : P → Finset L) (β : ℝ) (U : L → Bool) : ℝ :=
+  ∏ p, Real.exp (β * plaq bd U p)
+
+/-- Partition function. -/
+noncomputable def Z (bd : P → Finset L) (β : ℝ) : ℝ := ∑ U : L → Bool, weight bd β U
+
+/-- Wilson loop along a set of links C. -/
+def wilson (C : Finset L) (U : L → Bool) : ℝ := ∏ l ∈ C, spin (U l)
+
+/-- Unnormalised Wilson-loop expectation. ⟨W_C⟩ = numer / Z. -/
+noncomputable def numer (bd : P → Finset L) (β : ℝ) (C : Finset L) : ℝ :=
+  ∑ U : L → Bool, wilson C U * weight bd β U
+
+/-- How many times link l occurs in C together with the boundaries of the plaquettes in S. -/
+def mult (bd : P → Finset L) (C : Finset L) (S : Finset P) (l : L) : ℕ :=
+  (if l ∈ C then 1 else 0) + (S.filter (fun p => l ∈ bd p)).card
+
+/-- S has boundary C (mod 2): every link occurs an even number of times in C and ∂S. -/
+abbrev HasBoundary (bd : P → Finset L) (S : Finset P) (C : Finset L) : Prop :=
+  ∀ l, Even (mult bd C S l)
+
+lemma spin_pm (b : Bool) : spin b = 1 ∨ spin b = -1 := by cases b <;> simp [spin]
+
+lemma sum_spin_pow (k : ℕ) : ∑ b : Bool, spin b ^ k = if Even k then 2 else 0 := by
+  rw [Fintype.sum_bool]
+  rcases Nat.even_or_odd k with h | h
+  · simp [spin, h.neg_one_pow, h]; norm_num
+  · simp [spin, h.neg_one_pow, Nat.not_even_iff_odd.mpr h]
+
+/-- Character orthogonality on Z₂^L: the link sum kills every odd power. -/
+lemma orthogonality (m : L → ℕ) :
+    ∑ U : L → Bool, ∏ l, spin (U l) ^ m l = if ∀ l, Even (m l) then 2 ^ Fintype.card L else 0 := by
+  rw [← Fintype.prod_sum (fun (l : L) (b : Bool) => spin b ^ m l)]
+  simp only [sum_spin_pow]
+  split_ifs with h
+  · rw [Finset.prod_congr rfl (fun l _ => if_pos (h l)), Finset.prod_const, Finset.card_univ]
+  · push Not at h
+    obtain ⟨l, hl⟩ := h
+    exact Finset.prod_eq_zero (Finset.mem_univ l) (if_neg (Nat.not_even_iff_odd.mpr hl))
+
+/-- The integrand of the expansion as a single product of link spins. -/
+lemma integrand (bd : P → Finset L) (C : Finset L) (S : Finset P) (U : L → Bool) :
+    wilson C U * ∏ p ∈ S, plaq bd U p = ∏ l, spin (U l) ^ mult bd C S l := by
+  have hw : wilson C U = ∏ l, spin (U l) ^ (if l ∈ C then 1 else 0) := by
+    unfold wilson
+    rw [← Fintype.prod_ite_mem]
+    refine Finset.prod_congr rfl (fun l _ => ?_)
+    split_ifs <;> simp
+  have hp : ∏ p ∈ S, plaq bd U p = ∏ l, spin (U l) ^ (S.filter (fun p => l ∈ bd p)).card := by
+    unfold plaq
+    simp only [← Fintype.prod_ite_mem (bd _)]
+    rw [Finset.prod_comm]
+    refine Finset.prod_congr rfl (fun l _ => ?_)
+    rw [← Finset.prod_const, Finset.prod_filter]
+  rw [hw, hp, ← Finset.prod_mul_distrib]
+  refine Finset.prod_congr rfl (fun l _ => ?_)
+  rw [← pow_add]
+  rfl
+
+lemma plaq_pm (bd : P → Finset L) (U : L → Bool) (p : P) :
+    plaq bd U p = 1 ∨ plaq bd U p = -1 := by
+  unfold plaq
+  refine Finset.prod_induction _ (fun x => x = 1 ∨ x = -1) ?_ (Or.inl rfl)
+    (fun l _ => spin_pm (U l))
+  rintro a b (rfl | rfl) (rfl | rfl) <;> norm_num
+
+/-- e^{βx} = cosh β (1 + x tanh β) for x = ±1: the key identity of the expansion. -/
+lemma exp_pm (β x : ℝ) (hx : x = 1 ∨ x = -1) :
+    Real.exp (β * x) = Real.cosh β * (1 + Real.tanh β * x) := by
+  have hc : Real.cosh β ≠ 0 := (Real.cosh_pos β).ne'
+  have key : Real.cosh β * (1 + Real.tanh β * x) = Real.cosh β + Real.sinh β * x := by
+    rw [Real.tanh_eq_sinh_div_cosh]
+    field_simp
+  rw [key]
+  rcases hx with rfl | rfl
+  · rw [mul_one, mul_one, Real.cosh_add_sinh]
+  · rw [show β * (-1) = -β by ring, mul_neg_one, ← sub_eq_add_neg, Real.cosh_sub_sinh]
+
+/-- The Boltzmann weight expanded over plaquette subsets. -/
+lemma weight_expand (bd : P → Finset L) (β : ℝ) (U : L → Bool) :
+    weight bd β U = Real.cosh β ^ Fintype.card P *
+      ∑ S ∈ (Finset.univ : Finset P).powerset, Real.tanh β ^ S.card * ∏ p ∈ S, plaq bd U p := by
+  unfold weight
+  rw [Finset.prod_congr rfl (fun p _ => exp_pm β _ (plaq_pm bd U p)), Finset.prod_mul_distrib,
+    Finset.prod_const, Finset.card_univ, Finset.prod_one_add]
+  congr 1
+  refine Finset.sum_congr rfl (fun S _ => ?_)
+  rw [Finset.prod_mul_distrib, Finset.prod_const]
+
+/-- **High-temperature (strong-coupling) expansion of Wilson loops, any lattice.** -/
+theorem numer_expand (bd : P → Finset L) (β : ℝ) (C : Finset L) :
+    numer bd β C = Real.cosh β ^ Fintype.card P * 2 ^ Fintype.card L *
+      ∑ S ∈ (Finset.univ : Finset P).powerset.filter (fun S => HasBoundary bd S C),
+        Real.tanh β ^ S.card := by
+  unfold numer
+  simp only [weight_expand]
+  set c := Real.cosh β ^ Fintype.card P
+  set t := Real.tanh β
+  calc ∑ U : L → Bool, wilson C U * (c * ∑ S ∈ (Finset.univ : Finset P).powerset,
+          t ^ S.card * ∏ p ∈ S, plaq bd U p)
+      = ∑ U : L → Bool, ∑ S ∈ (Finset.univ : Finset P).powerset,
+          c * t ^ S.card * (wilson C U * ∏ p ∈ S, plaq bd U p) := by
+        refine Finset.sum_congr rfl (fun U _ => ?_)
+        rw [Finset.mul_sum, Finset.mul_sum]
+        refine Finset.sum_congr rfl (fun S _ => ?_)
+        ring
+    _ = ∑ S ∈ (Finset.univ : Finset P).powerset, ∑ U : L → Bool,
+          c * t ^ S.card * (wilson C U * ∏ p ∈ S, plaq bd U p) := Finset.sum_comm
+    _ = ∑ S ∈ (Finset.univ : Finset P).powerset,
+          c * t ^ S.card * (if HasBoundary bd S C then 2 ^ Fintype.card L else 0) := by
+        refine Finset.sum_congr rfl (fun S _ => ?_)
+        rw [← Finset.mul_sum]
+        simp only [integrand]
+        rw [orthogonality]
+    _ = c * 2 ^ Fintype.card L * ∑ S ∈ (Finset.univ : Finset P).powerset.filter
+          (fun S => HasBoundary bd S C), t ^ S.card := by
+        rw [Finset.sum_filter, Finset.mul_sum]
+        refine Finset.sum_congr rfl (fun S _ => ?_)
+        split_ifs <;> ring
+
+/-- The partition function: a sum over closed plaquette surfaces. -/
+theorem Z_expand (bd : P → Finset L) (β : ℝ) :
+    Z bd β = Real.cosh β ^ Fintype.card P * 2 ^ Fintype.card L *
+      ∑ S ∈ (Finset.univ : Finset P).powerset.filter (fun S => HasBoundary bd S ∅),
+        Real.tanh β ^ S.card := by
+  rw [← numer_expand]
+  unfold Z numer
+  simp [wilson]
+
+/-- Surface sums. -/
+noncomputable def surf (bd : P → Finset L) (β : ℝ) (C : Finset L) : ℝ :=
+  ∑ S ∈ (Finset.univ : Finset P).powerset.filter (fun S => HasBoundary bd S C), Real.tanh β ^ S.card
+
+/-- ⟨W_C⟩ as a ratio of surface sums: open surfaces bounded by C over closed surfaces. -/
+theorem wilson_ratio (bd : P → Finset L) (β : ℝ) (C : Finset L) :
+    numer bd β C / Z bd β = surf bd β C / surf bd β ∅ := by
+  rw [numer_expand, Z_expand]
+  have h1 : Real.cosh β ^ Fintype.card P * 2 ^ Fintype.card L ≠ 0 := by
+    have := Real.cosh_pos β; positivity
+  unfold surf
+  rw [mul_div_mul_left _ _ h1]
+
+lemma tanh_nonneg' (β : ℝ) (hβ : 0 ≤ β) : 0 ≤ Real.tanh β := by
+  rw [Real.tanh_eq_sinh_div_cosh, Real.sinh_eq]
+  have : Real.exp (-β) ≤ Real.exp β := Real.exp_le_exp.mpr (by linarith)
+  exact div_nonneg (by linarith) (Real.cosh_pos β).le
+
+lemma surf_nonneg (bd : P → Finset L) (β : ℝ) (hβ : 0 ≤ β) (C : Finset L) : 0 ≤ surf bd β C :=
+  Finset.sum_nonneg (fun S _ => pow_nonneg (tanh_nonneg' β hβ) _)
+
+/-- The empty surface is closed, so the closed-surface sum is at least 1. -/
+lemma surf_closed_ge_one (bd : P → Finset L) (β : ℝ) (hβ : 0 ≤ β) : 1 ≤ surf bd β ∅ := by
+  unfold surf
+  have hmem : (∅ : Finset P) ∈ (Finset.univ : Finset P).powerset.filter
+      (fun S => HasBoundary bd S ∅) := by
+    simp only [Finset.mem_filter, Finset.mem_powerset, Finset.empty_subset, true_and]
+    intro l
+    simp [mult]
+  have := Finset.single_le_sum (f := fun S : Finset P => Real.tanh β ^ S.card)
+    (fun S _ => pow_nonneg (tanh_nonneg' β hβ) _) hmem
+  simpa using this
+
+/-- **Positivity of Wilson loops** for β ≥ 0 (a Griffiths-type inequality), any lattice. -/
+theorem wilson_nonneg (bd : P → Finset L) (β : ℝ) (hβ : 0 ≤ β) (C : Finset L) :
+    0 ≤ numer bd β C / Z bd β := by
+  rw [wilson_ratio]
+  exact div_nonneg (surf_nonneg bd β hβ C) (surf_nonneg bd β hβ ∅)
+
+/-- ⟨W_C⟩ is bounded by the sum over surfaces with boundary C. -/
+theorem wilson_le_surf (bd : P → Finset L) (β : ℝ) (hβ : 0 ≤ β) (C : Finset L) :
+    numer bd β C / Z bd β ≤ surf bd β C := by
+  rw [wilson_ratio]
+  exact div_le_self (surf_nonneg bd β hβ C) (surf_closed_ge_one bd β hβ)
+
+/-- **Finite-volume area law at strong coupling, any dimension.** If every surface bounded by
+C has at least A plaquettes, then ⟨W_C⟩ ≤ 2^|P| · tanh(β)^A. The factor 2^|P| depends on the
+volume; removing it needs the polymer (cluster) expansion, the next milestone. -/
+theorem area_bound (bd : P → Finset L) (β : ℝ) (hβ : 0 ≤ β) (C : Finset L) (A : ℕ)
+    (hA : ∀ S : Finset P, HasBoundary bd S C → A ≤ S.card) :
+    numer bd β C / Z bd β ≤ 2 ^ Fintype.card P * Real.tanh β ^ A := by
+  refine (wilson_le_surf bd β hβ C).trans ?_
+  have ht0 := tanh_nonneg' β hβ
+  have ht1 : Real.tanh β ≤ 1 := (Real.tanh_lt_one β).le
+  unfold surf
+  calc ∑ S ∈ (Finset.univ : Finset P).powerset.filter (fun S => HasBoundary bd S C),
+        Real.tanh β ^ S.card
+      ≤ ∑ S ∈ (Finset.univ : Finset P).powerset.filter (fun S => HasBoundary bd S C),
+          Real.tanh β ^ A := by
+        refine Finset.sum_le_sum (fun S hS => ?_)
+        exact pow_le_pow_of_le_one ht0 ht1 (hA S (Finset.mem_filter.mp hS).2)
+    _ ≤ ∑ S ∈ (Finset.univ : Finset P).powerset, Real.tanh β ^ A :=
+        Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _)
+          (fun _ _ _ => pow_nonneg ht0 _)
+    _ = 2 ^ Fintype.card P * Real.tanh β ^ A := by
+        rw [Finset.sum_const, Finset.card_powerset, Finset.card_univ, nsmul_eq_mul]
+        push_cast; ring
+
+end HTE
+
+/-! ### The hypercubic lattice in d dimensions (periodic, side N) -/
+
+namespace Hypercubic
+
+variable (d N : ℕ) [NeZero N]
+
+abbrev Site := Fin d → ZMod N
+abbrev Link := Site d N × Fin d
+abbrev Plaq := Site d N × {q : Fin d × Fin d // q.1 < q.2}
+
+/-- Unit vector in direction μ. -/
+def e {d N : ℕ} (μ : Fin d) : Fin d → ZMod N := Pi.single μ 1
+
+/-- The four boundary links of the plaquette at x in the (μ, ν) plane. -/
+def bd {d N : ℕ} [NeZero N] (q : Plaq d N) : Finset (Link d N) :=
+  {(q.1, q.2.1.1), (q.1 + e q.2.1.1, q.2.1.2), (q.1 + e q.2.1.2, q.2.1.1), (q.1, q.2.1.2)}
+
+/-- The strong-coupling area bound, specialised to the 4D hypercubic lattice. -/
+theorem area_bound_4d (β : ℝ) (hβ : 0 ≤ β) (C : Finset (Link 4 N)) (A : ℕ)
+    (hA : ∀ S : Finset (Plaq 4 N), HTE.HasBoundary (@bd 4 N _) S C → A ≤ S.card) :
+    HTE.numer (@bd 4 N _) β C / HTE.Z (@bd 4 N _) β ≤ 2 ^ Fintype.card (Plaq 4 N) * Real.tanh β ^ A :=
+  HTE.area_bound (@bd 4 N _) β hβ C A hA
+
+/-- Wilson loops are nonnegative in 4D lattice Z₂ gauge theory at any β ≥ 0. -/
+theorem wilson_nonneg_4d (β : ℝ) (hβ : 0 ≤ β) (C : Finset (Link 4 N)) :
+    0 ≤ HTE.numer (@bd 4 N _) β C / HTE.Z (@bd 4 N _) β :=
+  HTE.wilson_nonneg (@bd 4 N _) β hβ C
+
+end Hypercubic
