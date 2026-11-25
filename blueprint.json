@@ -1,0 +1,154 @@
+{
+  "preamble": "import Mathlib.Analysis.SpecialFunctions.Log.Basic\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.NoncommRing\nimport Mathlib.Tactic.Group\nimport Mathlib.Tactic.FieldSimp\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Abel\nimport Mathlib.Algebra.Order.Archimedean.Basic\nimport Mathlib.Algebra.BigOperators.Group.Finset.Basic\nimport Mathlib.Data.Int.Order.Units\nimport Mathlib.Tactic.GCongr\nopen BigOperators\n\nnamespace YM\n\ndef gaugeTransform {G X : Type*} [Group G] (g : X → G) (U : X → X → G) : X → X → G :=\n  fun x y => g x * U x y * (g y)⁻¹\n\nstructure Plaquette (X : Type*) where\n  a : X\n  b : X\n  c : X\n  d : X\n\ndef holonomy {G X : Type*} [Group G] (U : X → X → G) (p : Plaquette X) : G :=\n  U p.a p.b * U p.b p.c * U p.c p.d * U p.d p.a\n\nend YM\nopen YM",
+  "targets": [
+    {
+      "name": "jacobi_ring",
+      "about": "Jacobi identity for commutators. Algebra behind the Bianchi identity.",
+      "statement": "theorem jacobi_ring {R : Type*} [Ring R] (a b c : R) : (a * (b * c - c * b) - (b * c - c * b) * a) + (b * (c * a - a * c) - (c * a - a * c) * b) + (c * (a * b - b * a) - (a * b - b * a) * c) = 0",
+      "status": "open",
+      "depth": 0,
+      "pathway": 0
+    },
+    {
+      "name": "holonomy_gauge",
+      "about": "Wilson loop around a plaquette transforms by conjugation. Core of lattice gauge invariance.",
+      "statement": "theorem holonomy_gauge {G X : Type*} [Group G] (g : X → G) (U : X → X → G) (p : Plaquette X) : holonomy (gaugeTransform g U) p = g p.a * holonomy U p * (g p.a)⁻¹",
+      "status": "open",
+      "depth": 0,
+      "pathway": 0
+    },
+    {
+      "name": "two_site_gap",
+      "about": "Two-site lattice: on states orthogonal to the vacuum (1,1), energy is at least 2. A finite-volume gap.",
+      "statement": "theorem two_site_gap (v₀ v₁ : ℝ) (h : v₀ + v₁ = 0) : (v₀ - v₁) ^ 2 ≥ 2 * (v₀ ^ 2 + v₁ ^ 2)",
+      "status": "open",
+      "depth": 0,
+      "pathway": 0
+    },
+    {
+      "name": "three_site_gap",
+      "about": "Complete graph on 3 sites: gap 3 above the vacuum.",
+      "statement": "theorem three_site_gap (v₀ v₁ v₂ : ℝ) (h : v₀ + v₁ + v₂ = 0) : (v₀ - v₁) ^ 2 + (v₁ - v₂) ^ 2 + (v₂ - v₀) ^ 2 ≥ 3 * (v₀ ^ 2 + v₁ ^ 2 + v₂ ^ 2)",
+      "status": "open",
+      "depth": 0,
+      "pathway": 0
+    },
+    {
+      "name": "massive_uniform_gap",
+      "about": "Lattice free field WITH a mass term: gap ≥ m² for every lattice size N. Uniform in N, which is what a mass gap means.",
+      "statement": "theorem massive_uniform_gap (N : ℕ) (v : ℕ → ℝ) (m : ℝ) : ∑ i ∈ Finset.range N, (v (i + 1) - v i) ^ 2 + m ^ 2 * ∑ i ∈ Finset.range N, v i ^ 2 ≥ m ^ 2 * ∑ i ∈ Finset.range N, v i ^ 2",
+      "status": "open",
+      "depth": 0,
+      "pathway": 0
+    },
+    {
+      "name": "gaps_can_close",
+      "about": "Positive gap at every size does not give a uniform gap.",
+      "statement": "theorem gaps_can_close : ∃ Δ : ℕ → ℝ, (∀ L, 0 < Δ L) ∧ ¬ ∃ m > 0, ∀ L, m ≤ Δ L",
+      "status": "open",
+      "depth": 0,
+      "pathway": 0
+    },
+    {
+      "name": "massless_gap_closes",
+      "about": "STRETCH. Massless lattice field: mean-zero, unit-norm states with arbitrarily small gradient energy exist. The gap closes as N grows, so no mass gap. Contrast with massive_uniform_gap. Yang-Mills is classically massless; the conjecture is that quantum effects reopen the gap.",
+      "statement": "theorem massless_gap_closes : ∀ ε > 0, ∃ N : ℕ, ∃ v : ℕ → ℝ, (∑ i ∈ Finset.range N, v i = 0) ∧ (∑ i ∈ Finset.range N, v i ^ 2 = 1) ∧ ∑ i ∈ Finset.range (N - 1), (v (i + 1) - v i) ^ 2 < ε",
+      "status": "open",
+      "depth": 0,
+      "pathway": 0
+    },
+    {
+      "name": "gap_criterion_discrete",
+      "pathway": 1,
+      "about": "Conditional gap criterion, discrete spectrum: one common exponential rate for the heat kernel forces every occupied level above that rate. The finite-dimensional core of the reduction used against ChallengeSpec.",
+      "statement": "theorem gap_criterion_discrete (lam w : ℕ → ℝ) (n : ℕ) (hw : ∀ i, 0 ≤ w i) (C m : ℝ) (h : ∀ t : ℝ, 1 ≤ t → ∑ i ∈ Finset.range n, w i * Real.exp (-t * lam i) ≤ C * Real.exp (-m * t)) : ∀ i < n, 0 < w i → m ≤ lam i",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "contraction_decay",
+      "pathway": 1,
+      "about": "Transfer matrix contraction: a one-step contraction factor q gives geometric decay.",
+      "statement": "theorem contraction_decay (v : ℕ → ℝ) (q : ℝ) (hq : 0 ≤ q) (h : ∀ n, v (n + 1) ≤ q * v n) : ∀ n, v n ≤ q ^ n * v 0",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "gap_from_contraction",
+      "pathway": 1,
+      "about": "A contraction q < 1 at Euclidean time τ gives a positive gap -log(q)/τ.",
+      "statement": "theorem gap_from_contraction (q τ : ℝ) (hq : 0 < q) (hq1 : q < 1) (hτ : 0 < τ) : 0 < -Real.log q / τ",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "pow_eq_exp_log",
+      "pathway": 1,
+      "about": "Geometric decay is exponential decay with rate -log q.",
+      "statement": "theorem pow_eq_exp_log (q : ℝ) (hq : 0 < q) (n : ℕ) : q ^ n = Real.exp ((n : ℝ) * Real.log q)",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "scale_split_uniform_gap",
+      "pathway": 3,
+      "about": "Shape of RG-plus-strong-coupling arguments: a uniform bound beyond some scale plus positivity at the finitely many scales before it gives a uniform gap.",
+      "statement": "theorem scale_split_uniform_gap (Δ : ℕ → ℝ) (hpos : ∀ L, 0 < Δ L) (m : ℝ) (hm : 0 < m) (L₀ : ℕ) (h : ∀ L ≥ L₀, m ≤ Δ L) : ∃ m' > 0, ∀ L, m' ≤ Δ L",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "polymer_series_bound",
+      "pathway": 4,
+      "about": "Toy cluster expansion: small activity makes the polymer series converge with an explicit bound.",
+      "statement": "theorem polymer_series_bound (z : ℝ) (hz : |z| < 1) (N : ℕ) : ∑ n ∈ Finset.range N, |z| ^ n ≤ 1 / (1 - |z|)",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "poincare_variance_decay",
+      "pathway": 5,
+      "about": "Discrete Poincaré-to-decay step: if variance shrinks by a factor (1 - λ) per step, it decays exponentially.",
+      "statement": "theorem poincare_variance_decay (V : ℕ → ℝ) (lam : ℝ) (hl0 : 0 ≤ lam) (hl1 : lam ≤ 1) (h : ∀ n, V (n + 1) ≤ (1 - lam) * V n) : ∀ n, V n ≤ (1 - lam) ^ n * V 0",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "holonomy_gauge_abelian",
+      "pathway": 6,
+      "about": "Abelian (e.g. Z2, U(1)) gauge theory: plaquette holonomy is exactly gauge invariant, not just up to conjugation.",
+      "statement": "theorem holonomy_gauge_abelian {G X : Type*} [CommGroup G] (g : X → G) (U : X → X → G) (p : Plaquette X) : holonomy (gaugeTransform g U) p = holonomy U p",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "z2_link_square",
+      "pathway": 6,
+      "about": "Z2 links square to one, so the Wilson weight of a Z2 plaquette takes only two values.",
+      "statement": "theorem z2_link_square (u : ℤˣ) : u * u = 1",
+      "status": "open",
+      "depth": 0
+    }
+  ],
+  "_pathways": {
+    "0": "foundations",
+    "1": "formal route via existence proof",
+    "2": "multiscale RG",
+    "3": "RG then strong coupling",
+    "4": "cluster expansion",
+    "5": "stochastic quantization / functional inequalities",
+    "6": "finite gauge groups",
+    "7": "large N",
+    "8": "confinement and center symmetry"
+  },
+  "_phase3_example": {
+    "note": "Phase 3: after adding OpenAI-YM-20261028 as a dependency of your Lean project, set preamble to import its ChallengeSpec and add a mass gap statement written against its definitions as a depth-0 target with pathway 1. Pin Lean to that repo's version.",
+    "preamble": "import Mathlib\nimport ChallengeSpec"
+  },
+  "extra_tactics": [
+    "unfold holonomy gaugeTransform",
+    "simp only [holonomy, gaugeTransform]",
+    "simp only [Finset.sum_range_succ]",
+    "induction n with\n| zero => simp\n| succ n ih => nlinarith [h n, ih, pow_succ q n]"
+  ]
+}

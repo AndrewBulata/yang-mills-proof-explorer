@@ -1,0 +1,90 @@
+
+=== round 1: 14 open targets ===
+
+> holonomy_gauge  (depth 0, attempt 2)
+  PROVED
+
+> three_site_gap  (depth 0, attempt 1)
+  PROVED
+
+> massive_uniform_gap  (depth 0, attempt 1)
+  PROVED
+
+> gaps_can_close  (depth 0, attempt 1)
+  not yet. stuck at: case w
+⊢ ℕ → ℝ
+
+> massless_gap_closes  (depth 0, attempt 1)
+  not yet. stuck at: ε : ℝ
+a : 0 < ε
+⊢ ∃ N v,
+    ∑ i ∈ Finset.range N, v i = 0 ∧
+      ∑ i ∈ Finset.range N, v i ^ 2 = 1 ∧ ∑ i ∈ Finset.range (N - 1), (v (i + 1) - v i) ^ 2 < ε
+
+> gap_criterion_discrete  (depth 0, attempt 1)
+  not yet. stuck at: lam w : ℕ → ℝ
+n : ℕ
+hw : ∀ (i : ℕ), 0 ≤ w i
+C m : ℝ
+h : ∀ (t : ℝ), 1 ≤ t → ∑ i ∈ Finset.range n, w i * Real.exp (-t * lam i) ≤ C * Real.exp (-m * t)
+⊢ ∀ i < n, 
+
+> contraction_decay  (depth 0, attempt 1)
+  not yet. stuck at: v : ℕ → ℝ
+q : ℝ
+hq : 0 ≤ q
+h : ∀ (n : ℕ), v (n + 1) ≤ q * v n
+n : ℕ
+⊢ v n ≤ q ^ n * v 0
+
+> gap_from_contraction  (depth 0, attempt 1)
+  not yet. stuck at: q τ : ℝ
+hq : 0 < q
+hq1 : q < 1
+hτ : 0 < τ
+⊢ Real.log q < 0
+
+> pow_eq_exp_log  (depth 0, attempt 1)
+  not yet. stuck at: q : ℝ
+hq : 0 < q
+n : ℕ
+⊢ q ^ n = Real.exp (↑n * Real.log q)
+
+> scale_split_uniform_gap  (depth 0, attempt 1)
+  not yet. stuck at: case w
+Δ : ℕ → ℝ
+hpos : ∀ (L : ℕ), 0 < Δ L
+m : ℝ
+hm : 0 < m
+L₀ : ℕ
+h : ∀ L ≥ L₀, m ≤ Δ L
+⊢ ℝ
+
+> polymer_series_bound  (depth 0, attempt 1)
+  not yet. stuck at: z : ℝ
+hz : |z| < 1
+N : ℕ
+⊢ ∑ n ∈ Finset.range N, |z| ^ n ≤ (1 - |z|)⁻¹
+
+> poincare_variance_decay  (depth 0, attempt 1)
+  not yet. stuck at: V : ℕ → ℝ
+lam : ℝ
+hl0 : 0 ≤ lam
+hl1 : lam ≤ 1
+h : ∀ (n : ℕ), V (n + 1) ≤ (1 - lam) * V n
+n : ℕ
+⊢ V n ≤ (1 - lam) ^ n * V 0
+
+> holonomy_gauge_abelian  (depth 0, attempt 1)
+  not yet. stuck at: G : Type u_1
+X : Type u_2
+inst✝ : CommGroup G
+g : X → G
+U : X → X → G
+p : Plaquette X
+⊢ holonomy (gaugeTransform g U) p = holonomy U p
+
+> z2_link_square  (depth 0, attempt 1)
+  PROVED
+
+Summary: 6/16 proved. Blueprint saved to /home/claude/ym_run_blueprint.json

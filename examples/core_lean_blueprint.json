@@ -1,0 +1,42 @@
+{
+  "preamble": "-- core Lean only, no Mathlib\n\nclass Grp (G : Type) extends Mul G, One G, Inv G where\n  mul_assoc : ∀ a b c : G, a * b * c = a * (b * c)\n  one_mul : ∀ a : G, 1 * a = a\n  mul_one : ∀ a : G, a * 1 = a\n  inv_mul : ∀ a : G, a⁻¹ * a = 1\n  mul_inv : ∀ a : G, a * a⁻¹ = 1\n\nopen Grp\n\ndef gaugeTransform {G X : Type} [Grp G] (g : X → G) (U : X → X → G) : X → X → G :=\n  fun x y => g x * U x y * (g y)⁻¹\n\ndef holonomy4 {G X : Type} [Grp G] (U : X → X → G) (a b c d : X) : G :=\n  U a b * U b c * U c d * U d a",
+  "targets": [
+    {
+      "name": "nat_add_comm_t",
+      "pathway": 0,
+      "statement": "theorem nat_add_comm_t (a b : Nat) : a + b = b + a",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "lattice_sites_even",
+      "pathway": 0,
+      "about": "a 2L-site periodic chain has an even number of sites",
+      "statement": "theorem lattice_sites_even (L : Nat) : (2 * L) % 2 = 0",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "list_rev_rev_t",
+      "pathway": 0,
+      "statement": "theorem list_rev_rev_t (l : List Nat) : l.reverse.reverse = l",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "int_sq_nonneg_t",
+      "pathway": 0,
+      "statement": "theorem int_sq_nonneg_t (x : Int) : 0 ≤ x * x",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "gauge_link_cancel",
+      "pathway": 0,
+      "about": "interior gauge factors cancel on two consecutive links",
+      "statement": "theorem gauge_link_cancel {G X : Type} [Grp G] (g : X → G) (U : X → X → G) (a b c : X) : gaugeTransform g U a b * gaugeTransform g U b c = g a * (U a b * U b c) * (g c)⁻¹",
+      "status": "open",
+      "depth": 0
+    }
+  ]
+}
