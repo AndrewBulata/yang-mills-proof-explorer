@@ -115,15 +115,25 @@ hypothesis entirely:
 | `HTE.strong_coupling_area_law_connected` | Volume-uniform area law from two inputs only |
 | `Hypercubic.strong_coupling_area_law_4d_connected` | The same on the 4D lattice |
 
-**What remains for a complete 4D strong-coupling confinement theorem** is two pure
-combinatorics facts about the hypercubic lattice, now the only hypotheses:
+**Lattice animals** (Part H). A general counting theorem for any finite graph where
+every vertex has at most Δ neighbours:
 
-1. **Minimal area**: every surface bounded by the loop C has at least A plaquettes.
-2. **Lattice animals**: at most c^k connected surfaces of k plaquettes are attached to C.
+| Theorem | Statement |
+| --- | --- |
+| `Animals.growth` | A connected set can be grown from one vertex by adding one neighbour at a time |
+| `Animals.exists_cover` | Every connected set of size k + 1 is the vertex set of a walk with 2k steps |
+| `Animals.card_walksFrom` | There are at most Δ^m walks with m steps from a vertex |
+| `Animals.animal_count` | **At most Δ^(2k) connected sets of size k + 1 contain a given vertex** |
 
-Both are standard results; neither involves physics or analysis. After them, the same
-surface machinery applied to plaquette–plaquette correlations gives the strong-coupling
-mass gap.
+**What remains for a complete 4D strong-coupling confinement theorem:**
+
+1. **Several components.** The attached part of a surface can have several connected
+   pieces, each touching the loop at a different place. Splitting it into pieces rooted at
+   the loop's plaquettes, and applying the animal bound to each, gives an area law with a
+   perimeter correction: ⟨W_C⟩ ≤ e^{μ|C|} (c tanh β)^A. This is the standard form.
+2. **Degree of the 4D plaquette graph.** Each plaquette shares a link with at most 20 others
+   (Δ = 21 counting itself), so c = Δ². Proving this needs the explicit 4D geometry.
+3. **Minimal area.** Every surface bounded by an R×T planar loop has at least R·T plaquettes.
 
 ### Conjecture mode: the engine proposes its own statements
 
@@ -192,6 +202,18 @@ python3 conjecture.py --project $W/ymproj --repl $W/repl/.lake/build/bin/repl \
 | `z2_transfer_gap` | confinement | 0 < 2 sinh β < 2 cosh β for β > 0 | Claude |
 | `z2_mass_gap` | confinement | Mass gap m = −log tanh β > 0 at every coupling | Claude |
 | `complete_graph_gap_all` | foundations | Complete-graph gap is n for every n | Claude (from conjecture mode) |
+
+## Related work
+
+**[mrdouglasny/lgt](https://github.com/mrdouglasny/lgt)** (Michael R. Douglas and Fred
+Rajasekaran) formalizes in Lean 4 a strong-coupling **mass gap** for U(n) Wilson lattice
+gauge theory on (ℤ/Nℤ)^d, d ≥ 2, by the Dobrushin uniqueness method: exponential decay of
+plaquette correlations for β < 1/(32n(d−1)), with only Lean's standard axioms. That result
+predates the strong-coupling work here and covers more gauge groups.
+
+This repository takes a complementary route: the high-temperature (surface) expansion,
+polymer cancellation and lattice animals, aimed at **confinement** (the Wilson-loop area
+law) rather than the mass gap. Where results overlap, theirs came first.
 
 ## How it works
 

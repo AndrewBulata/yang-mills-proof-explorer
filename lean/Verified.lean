@@ -12,6 +12,8 @@
   Part G: the splitting map constructed explicitly for any lattice (the part of a surface
           connected to the loop), so the area law needs only minimal area and a count of
           connected attached surfaces.
+  Part H: lattice animals in any bounded-degree graph: at most Δ^(2k) connected sets of
+          size k + 1 contain a given vertex.
   Axioms used: only propext, Classical.choice, Quot.sound (Lean's standard three).
 -/
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
@@ -945,3 +947,166 @@ theorem strong_coupling_area_law_4d_connected (β : ℝ) (hβ : 0 ≤ β) (C : F
   HTE.strong_coupling_area_law_connected (@bd 4 N _) β hβ C c hc hct A hA hcount
 
 end Hypercubic
+
+
+/-! ## Part H: lattice animals in any bounded-degree graph
+
+**Theorem (`animal_count`).** In any finite graph with symmetric adjacency R in which every
+vertex has at most Δ neighbours, the number of connected vertex sets of size k + 1 containing
+a given vertex v is at most Δ^(2k).
+
+Proof: a connected set can be grown from {v} one neighbour at a time (`growth`); each
+growth step extends a covering walk by a detour out and back (`cover_step`), so every
+connected set of size k + 1 is the vertex set of a walk from v with 2k steps
+(`exists_cover`); there are at most Δ^m walks with m steps (`card_walksFrom`). -/
+
+namespace Animals
+
+set_option linter.unusedSectionVars false
+
+variable {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R]
+
+/-- Neighbours of v. -/
+def nbr (v : V) : Finset V := Finset.univ.filter (R v)
+
+/-- A step between two vertices of T. -/
+def stepIn (T : Finset V) (a b : V) : Prop := a ∈ T ∧ b ∈ T ∧ R a b
+
+/-- T contains v and is connected: every vertex of T is reachable from v inside T. -/
+def RootedConn (T : Finset V) (v : V) : Prop :=
+  v ∈ T ∧ ∀ x ∈ T, Relation.ReflTransGen (stepIn R T) v x
+
+/-- All walks with m steps starting at v, as vertex lists. -/
+def walksFrom : ℕ → V → Finset (List V)
+  | 0, v => {[v]}
+  | m + 1, v => (nbr R v).biUnion (fun u => (walksFrom m u).image (fun w => v :: w))
+
+theorem card_walksFrom (Δ : ℕ) (hΔ : ∀ v, (nbr R v).card ≤ Δ) :
+    ∀ m v, (walksFrom R m v).card ≤ Δ ^ m
+  | 0, v => by simp [walksFrom]
+  | m + 1, v => by
+      simp only [walksFrom]
+      calc _ ≤ ∑ u ∈ nbr R v, ((walksFrom R m u).image (fun w => v :: w)).card :=
+            Finset.card_biUnion_le
+        _ ≤ ∑ u ∈ nbr R v, Δ ^ m :=
+            Finset.sum_le_sum (fun u _ => Finset.card_image_le.trans (card_walksFrom Δ hΔ m u))
+        _ = (nbr R v).card * Δ ^ m := by rw [Finset.sum_const, smul_eq_mul]
+        _ ≤ Δ * Δ ^ m := Nat.mul_le_mul_right _ (hΔ v)
+        _ = Δ ^ (m + 1) := by ring
+
+theorem mem_walksFrom : ∀ (m : ℕ) (v : V) (w : List V), w.head? = some v →
+    w.length = m + 1 → List.IsChain R w → w ∈ walksFrom R m v
+  | 0, v, [], hh, _, _ => by simp at hh
+  | 0, v, [a], hh, _, _ => by simp at hh; subst hh; simp [walksFrom]
+  | 0, _, _ :: _ :: _, _, hl, _ => by simp at hl
+  | _ + 1, _, [], hh, _, _ => by simp at hh
+  | _ + 1, _, [_], _, hl, _ => by simp at hl
+  | m + 1, v, a :: u :: rest, hh, hl, hc => by
+      simp at hh; subst hh
+      rw [List.isChain_cons_cons] at hc
+      simp only [walksFrom, Finset.mem_biUnion, Finset.mem_image]
+      exact ⟨u, by simp [nbr, hc.1], u :: rest,
+        mem_walksFrom m u (u :: rest) rfl (by simpa using hl) hc.2, rfl⟩
+
+/-- A connected set can always be grown by one neighbour of the current part. -/
+theorem growth (T A : Finset V) (v : V) (hT : RootedConn R T v) (hvA : v ∈ A) (hAT : A ⊆ T)
+    (hne : A ≠ T) : ∃ a ∈ A, ∃ y ∈ T, y ∉ A ∧ R a y := by
+  have hx : ∃ x ∈ T, x ∉ A := by
+    by_contra h
+    push Not at h
+    exact hne (Finset.Subset.antisymm hAT h)
+  obtain ⟨x, hxT, hxA⟩ := hx
+  have key : ∀ z, Relation.ReflTransGen (stepIn R T) v z →
+      z ∈ A ∨ ∃ a ∈ A, ∃ y ∈ T, y ∉ A ∧ R a y := by
+    intro z hz
+    induction hz with
+    | refl => exact Or.inl hvA
+    | @tail b c _ hbc ih =>
+      rcases ih with hb | h
+      · by_cases hc : c ∈ A
+        · exact Or.inl hc
+        · exact Or.inr ⟨b, hb, c, hbc.2.1, hc, hbc.2.2⟩
+      · exact Or.inr h
+  rcases key x (hT.2 x hxT) with h | h
+  · exact absurd h hxA
+  · exact h
+
+/-- w is a walk from v whose vertex set is exactly T, with 2|T| - 1 vertices. -/
+def Covers (T : Finset V) (v : V) (w : List V) : Prop :=
+  w.head? = some v ∧ List.IsChain R w ∧ w.toFinset = T ∧ w.length = 2 * T.card - 1
+
+/-- Adding a neighbour y of a covered vertex a: detour a → y → a. -/
+theorem cover_step (A : Finset V) (v a y : V) (w : List V) (hw : Covers R A v w)
+    (ha : a ∈ A) (hy : y ∉ A) (hay : R a y) (hya : R y a) :
+    ∃ w', Covers R (insert y A) v w' := by
+  obtain ⟨hh, hc, hset, hlen⟩ := hw
+  have haw : a ∈ w := by rw [← List.mem_toFinset, hset]; exact ha
+  obtain ⟨l1, l2, rfl⟩ := List.append_of_mem haw
+  refine ⟨l1 ++ a :: y :: a :: l2, ?_, ?_, ?_, ?_⟩
+  · cases l1 <;> simpa using hh
+  · rw [List.isChain_split] at hc ⊢
+    refine ⟨hc.1, ?_⟩
+    rw [List.isChain_cons_cons, List.isChain_cons_cons]
+    exact ⟨hay, hya, hc.2⟩
+  · rw [← hset]
+    ext x
+    simp only [List.mem_toFinset, List.mem_append, List.mem_cons, Finset.mem_insert]
+    tauto
+  · have hA : 1 ≤ A.card := Finset.card_pos.mpr ⟨a, ha⟩
+    rw [Finset.card_insert_of_notMem hy]
+    simp only [List.length_append, List.length_cons] at hlen ⊢
+    omega
+
+/-- **Every connected set is covered by a walk from v with 2(|T| - 1) steps.** -/
+theorem exists_cover (T : Finset V) (v : V) (hT : RootedConn R T v)
+    (hsymm : ∀ a b, R a b → R b a) : ∃ w, Covers R T v w := by
+  have main : ∀ n, ∀ A : Finset V, v ∈ A → A ⊆ T → A.card + n = T.card →
+      (∃ w, Covers R A v w) → ∃ w, Covers R T v w := by
+    intro n
+    induction n with
+    | zero =>
+      intro A _ hAT hc hw
+      have : A = T := Finset.eq_of_subset_of_card_le hAT (by omega)
+      subst this
+      exact hw
+    | succ n ih =>
+      intro A hvA hAT hc hw
+      obtain ⟨w, hw⟩ := hw
+      have hne : A ≠ T := by
+        intro h; subst h; omega
+      obtain ⟨a, ha, y, hyT, hyA, hay⟩ := growth R T A v hT hvA hAT hne
+      exact ih (insert y A) (Finset.mem_insert_of_mem hvA) (Finset.insert_subset hyT hAT)
+        (by rw [Finset.card_insert_of_notMem hyA]; omega)
+        (cover_step R A v a y w hw ha hyA hay (hsymm _ _ hay))
+  have hpos : 1 ≤ T.card := Finset.card_pos.mpr ⟨v, hT.1⟩
+  exact main (T.card - 1) {v} (Finset.mem_singleton_self v)
+    (Finset.singleton_subset_iff.mpr hT.1) (by rw [Finset.card_singleton]; omega)
+    ⟨[v], rfl, List.isChain_singleton v, by simp, by simp⟩
+
+open Classical in
+/-- **Lattice-animal bound.** At most Δ^(2k) connected sets of size k + 1 contain v. -/
+theorem animal_count (Δ : ℕ) (hΔ : ∀ v, (nbr R v).card ≤ Δ) (hsymm : ∀ a b, R a b → R b a)
+    (v : V) (k : ℕ) :
+    ((Finset.univ : Finset (Finset V)).filter
+      (fun T => RootedConn R T v ∧ T.card = k + 1)).card ≤ Δ ^ (2 * k) := by
+  have hw : ∀ T, RootedConn R T v → ∃ w, Covers R T v w :=
+    fun T hT => exists_cover R T v hT hsymm
+  let f : Finset V → List V := fun T =>
+    if h : RootedConn R T v then Classical.choose (hw T h) else []
+  have hf : ∀ T, RootedConn R T v → Covers R T v (f T) := by
+    intro T hT
+    simp only [f, dif_pos hT]
+    exact Classical.choose_spec (hw T hT)
+  calc _ ≤ (walksFrom R (2 * k) v).card := by
+        apply Finset.card_le_card_of_injOn f
+        · intro T hT
+          have hT' := Finset.mem_filter.mp hT
+          have hc := hf T hT'.2.1
+          exact mem_walksFrom R (2 * k) v (f T) hc.1 (by rw [hc.2.2.2, hT'.2.2]; omega) hc.2.1
+        · intro T₁ h₁ T₂ h₂ heq
+          have c1 := hf T₁ (Finset.mem_filter.mp h₁).2.1
+          have c2 := hf T₂ (Finset.mem_filter.mp h₂).2.1
+          rw [← c1.2.2.1, ← c2.2.2.1, heq]
+    _ ≤ Δ ^ (2 * k) := card_walksFrom R Δ hΔ (2 * k) v
+
+end Animals
