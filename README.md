@@ -20,11 +20,11 @@ depends only on Lean's three standard axioms (`propext`, `Classical.choice`,
 | Run | Proposer | Proved | Output |
 | --- | --- | --- | --- |
 | 1 | Tactic list, engine search (3,592 steps) | 6 of 16 | [`results/2026-11-25-static/`](results/2026-11-25-static/) |
-| 2 | Claude as proposer, every proof verified by Lean | remaining 10, plus 13 new | [`results/2026-11-25-claude-proposer/`](results/2026-11-25-claude-proposer/) |
+| 2 | AI-assisted proposer, every proof verified by Lean | remaining 10, plus 13 new | [`results/2026-11-25-ai-assisted/`](results/2026-11-25-ai-assisted/) |
 | 3 | Conjecture mode: engine invents and tests its own statements | 45 explored: 16 proved, 18 refuted, 11 open | [`results/2026-11-25-conjecture-run/`](results/2026-11-25-conjecture-run/) |
 | 4 | Engine search on Part G's basic lemmas, given only the definitions | 6 of 7 | [`results/2026-11-25-engine-part-g/`](results/2026-11-25-engine-part-g/) |
 
-Parts B to G were written by Claude acting as proposer and checked by Lean outside the
+Parts B to H were developed with an AI-assisted proposer and checked by Lean outside the
 search loop; run 4 put the engine back on Part G's basic lemmas, where it found its own
 proofs for 6 of 7. The tactic list proved none of the 6 new results of run 2 on its own. They need multi-step
 plans (reindexing a sum over a group, hyperbolic identities, a product of sums),
@@ -159,12 +159,12 @@ What the first run found on its own (full report:
   `complete_gap_3` and `complete_gap_4` are optimal: raising each by one is refuted.
 - **Necessary hypotheses.** Dropping the mean-zero condition, `0 < q` in
   `gap_from_contraction`, or `0 < β` in `z2_string_tension_pos` is refuted in each case.
-- **A pattern to generalise.** The complete-graph gap is n for n = 3, 4, 5. Claude then
-  proved it for every n (`complete_graph_gap_all`), the step an AI proposer adds to the loop.
+- **A pattern to generalise.** The complete-graph gap is n for n = 3, 4, and 5. It was then
+  proved for every n (`complete_graph_gap_all`), the step an AI proposer adds to the loop.
 
 ```bash
 python3 conjecture.py --project $W/ymproj --repl $W/repl/.lake/build/bin/repl \
-    --blueprint results/2026-11-25-claude-proposer/blueprint.json \
+    --blueprint results/2026-11-25-ai-assisted/blueprint.json \
     --sources mutate,families --rounds 2 --only two_site_gap,three_site_gap
 # add llm to --sources (with ANTHROPIC_API_KEY set) for Claude-generated conjectures
 ```
@@ -173,35 +173,42 @@ python3 conjecture.py --project $W/ymproj --repl $W/repl/.lake/build/bin/repl \
 
 | Target | Pathway | What it says | Found by |
 | --- | --- | --- | --- |
-| `jacobi_ring` | foundations | Jacobi identity for commutators (algebra behind the Bianchi identity) | engine |
-| `holonomy_gauge` | foundations | Lattice Wilson loops transform by conjugation under gauge transformations | engine |
-| `two_site_gap` | foundations | Two-site lattice: energy gap 2 above the vacuum | engine |
-| `three_site_gap` | foundations | Three-site lattice: energy gap 3 | engine |
-| `massive_uniform_gap` | foundations | Massive lattice free field: gap ≥ m², uniform in lattice size | engine |
-| `z2_link_square` | finite groups | Z₂ link variables square to one | engine |
-| `gaps_can_close` | foundations | Positive gaps at every size do not give a uniform gap | Claude |
-| `massless_gap_closes` | foundations | Massless lattice field: a step profile has gradient energy 2/(M+1), so the gap closes | Claude |
-| `gap_criterion_discrete` | formal route | One common decay rate forces a spectral gap | Claude |
-| `contraction_decay` | formal route | Transfer-matrix contraction gives geometric decay | Claude |
-| `gap_from_contraction` | formal route | Contraction q < 1 gives gap −log(q)/τ > 0 | Claude |
-| `pow_eq_exp_log` | formal route | qⁿ = exp(n log q) | Claude |
-| `scale_split_uniform_gap` | RG + strong coupling | Uniform bound past one scale plus finitely many scales gives a uniform gap | Claude |
-| `polymer_series_bound` | cluster expansion | Toy polymer series converges with explicit bound | Claude |
-| `poincare_variance_decay` | stochastic quantization | Poincaré-type contraction gives exponential variance decay | Claude |
-| `holonomy_gauge_abelian` | finite groups | Abelian Wilson loops are exactly gauge invariant | Claude |
-| `haar_left_invariant` | finite groups | Haar measure on a finite group is translation invariant | Claude |
-| `elitzur_mechanism` | confinement | Sign-flipping observables have zero expectation | Claude |
-| `z2_plaquette_expectation` | confinement | ⟨u⟩ = tanh β for one Z₂ plaquette | Claude |
-| `z2_wilson_loop_area_law` | confinement | ⟨W⟩ = (tanh β)^A in 2D Z₂ gauge theory | Claude |
-| `z2_string_tension_pos` | confinement | σ = −log tanh β > 0 for all β > 0 | Claude |
-| `z2_area_law_exponential` | confinement | ⟨W⟩ = exp(−σA) | Claude |
-| `z2_transfer_vacuum` | confinement | Vacuum eigenvalue 2 cosh β | Claude |
-| `z2_transfer_excited` | confinement | Excited eigenvalue 2 sinh β | Claude |
-| `z2_transfer_spectrum` | confinement | Spectrum is exactly {2 cosh β, 2 sinh β} | Claude |
-| `z2_transfer_iterate` | confinement | (2 sinh β)ⁿ decay of excited states | Claude |
-| `z2_transfer_gap` | confinement | 0 < 2 sinh β < 2 cosh β for β > 0 | Claude |
-| `z2_mass_gap` | confinement | Mass gap m = −log tanh β > 0 at every coupling | Claude |
-| `complete_graph_gap_all` | foundations | Complete-graph gap is n for every n | Claude (from conjecture mode) |
+| `jacobi_ring` | foundations | Jacobi identity for commutators (algebra behind the Bianchi identity) | engine search |
+| `holonomy_gauge` | foundations | Lattice Wilson loops transform by conjugation under gauge transformations | engine search |
+| `two_site_gap` | foundations | Two-site lattice: energy gap 2 above the vacuum | engine search |
+| `three_site_gap` | foundations | Three-site lattice: energy gap 3 | engine search |
+| `massive_uniform_gap` | foundations | Massive lattice free field: gap ≥ m², uniform in lattice size | engine search |
+| `z2_link_square` | finite groups | Z₂ link variables square to one | engine search |
+| `gaps_can_close` | foundations | Positive gaps at every size do not give a uniform gap | AI-assisted |
+| `massless_gap_closes` | foundations | Massless lattice field: a step profile has gradient energy 2/(M+1), so the gap closes | AI-assisted |
+| `gap_criterion_discrete` | formal route | One common decay rate forces a spectral gap | AI-assisted |
+| `contraction_decay` | formal route | Transfer-matrix contraction gives geometric decay | AI-assisted |
+| `gap_from_contraction` | formal route | Contraction q < 1 gives gap −log(q)/τ > 0 | AI-assisted |
+| `pow_eq_exp_log` | formal route | qⁿ = exp(n log q) | AI-assisted |
+| `scale_split_uniform_gap` | RG + strong coupling | Uniform bound past one scale plus finitely many scales gives a uniform gap | AI-assisted |
+| `polymer_series_bound` | cluster expansion | Toy polymer series converges with explicit bound | AI-assisted |
+| `poincare_variance_decay` | stochastic quantization | Poincaré-type contraction gives exponential variance decay | AI-assisted |
+| `holonomy_gauge_abelian` | finite groups | Abelian Wilson loops are exactly gauge invariant | AI-assisted |
+| `haar_left_invariant` | finite groups | Haar measure on a finite group is translation invariant | AI-assisted |
+| `elitzur_mechanism` | confinement | Sign-flipping observables have zero expectation | AI-assisted |
+| `z2_plaquette_expectation` | confinement | ⟨u⟩ = tanh β for one Z₂ plaquette | AI-assisted |
+| `z2_wilson_loop_area_law` | confinement | ⟨W⟩ = (tanh β)^A in 2D Z₂ gauge theory | AI-assisted |
+| `z2_string_tension_pos` | confinement | σ = −log tanh β > 0 for all β > 0 | AI-assisted |
+| `z2_area_law_exponential` | confinement | ⟨W⟩ = exp(−σA) | AI-assisted |
+| `z2_transfer_vacuum` | confinement | Vacuum eigenvalue 2 cosh β | AI-assisted |
+| `z2_transfer_excited` | confinement | Excited eigenvalue 2 sinh β | AI-assisted |
+| `z2_transfer_spectrum` | confinement | Spectrum is exactly {2 cosh β, 2 sinh β} | AI-assisted |
+| `z2_transfer_iterate` | confinement | (2 sinh β)ⁿ decay of excited states | AI-assisted |
+| `z2_transfer_gap` | confinement | 0 < 2 sinh β < 2 cosh β for β > 0 | AI-assisted |
+| `z2_mass_gap` | confinement | Mass gap m = −log tanh β > 0 at every coupling | AI-assisted |
+| `complete_graph_gap_all` | foundations | Complete-graph gap is n for every n | AI-assisted (from conjecture mode) |
+
+## Authorship
+
+Designed and directed by **Andrew Bulata**: the research programme, the choice of
+pathways and targets, the engine's architecture, and the decisions about what to prove
+next. Proofs were developed with AI assistance (Claude) and every one is checked by Lean,
+which is the only judge of correctness in this repository.
 
 ## Related work
 

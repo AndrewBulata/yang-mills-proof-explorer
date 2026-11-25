@@ -59,7 +59,7 @@
       "depth": 0,
       "pathway": 0,
       "proof": "theorem gaps_can_close : ∃ Δ : ℕ → ℝ, (∀ L, 0 < Δ L) ∧ ¬ ∃ m > 0, ∀ L, m ≤ Δ L := by\n  refine ⟨fun L => 1 / ((L : ℝ) + 1), fun L => by positivity, ?_⟩\n  rintro ⟨m, hm, h⟩\n  obtain ⟨N, hN⟩ := exists_nat_one_div_lt hm\n  have hN' : m ≤ 1 / ((N : ℝ) + 1) := h N\n  linarith",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "massless_gap_closes",
@@ -69,7 +69,7 @@
       "depth": 0,
       "pathway": 0,
       "proof": "theorem massless_gap_closes : ∀ ε > 0, ∃ N : ℕ, ∃ v : ℕ → ℝ,\n    (∑ i ∈ Finset.range N, v i = 0) ∧ (∑ i ∈ Finset.range N, v i ^ 2 = 1) ∧\n    ∑ i ∈ Finset.range (N - 1), (v (i + 1) - v i) ^ 2 < ε := by\n  intro ε hε\n  obtain ⟨M, hM⟩ := exists_nat_one_div_lt (half_pos hε)\n  set K : ℕ := M + 1 with hK\n  have hKpos : (0 : ℝ) < K := by positivity\n  set c : ℝ := Real.sqrt (1 / (2 * K)) with hc\n  have hc2 : c ^ 2 = 1 / (2 * K) := by\n    rw [hc, Real.sq_sqrt]; positivity\n  let v : ℕ → ℝ := fun i => if i < K then c else -c\n  refine ⟨K + K, v, ?_, ?_, ?_⟩\n  · rw [Finset.sum_range_add]\n    have h1 : ∑ i ∈ Finset.range K, v i = ∑ i ∈ Finset.range K, c :=\n      Finset.sum_congr rfl (fun i hi => by simp [v, Finset.mem_range.mp hi])\n    have h2 : ∑ i ∈ Finset.range K, v (K + i) = ∑ i ∈ Finset.range K, -c :=\n      Finset.sum_congr rfl (fun i _ => by simp [v])\n    rw [h1, h2]; simp\n  · rw [Finset.sum_range_add]\n    have h1 : ∑ i ∈ Finset.range K, v i ^ 2 = ∑ i ∈ Finset.range K, c ^ 2 :=\n      Finset.sum_congr rfl (fun i hi => by simp [v, Finset.mem_range.mp hi])\n    have h2 : ∑ i ∈ Finset.range K, v (K + i) ^ 2 = ∑ i ∈ Finset.range K, c ^ 2 :=\n      Finset.sum_congr rfl (fun i _ => by simp [v])\n    rw [h1, h2, hc2]; simp; field_simp; ring\n  · have hN : K + K - 1 = M + (M + 1) := by omega\n    rw [hN, Finset.sum_range_add, Finset.sum_range_succ']\n    have h1 : ∑ i ∈ Finset.range M, (v (i + 1) - v i) ^ 2 = 0 :=\n      Finset.sum_eq_zero (fun i hi => by\n        have := Finset.mem_range.mp hi\n        simp [v, show i + 1 < K by omega, show i < K by omega])\n    have h2 : ∑ i ∈ Finset.range M, (v (M + (i + 1) + 1) - v (M + (i + 1))) ^ 2 = 0 :=\n      Finset.sum_eq_zero (fun i _ => by\n        simp [v, show ¬ (M + (i + 1) + 1 < K) by omega, show ¬ (M + (i + 1) < K) by omega])\n    have h3 : (v (M + 0 + 1) - v (M + 0)) ^ 2 = 4 * c ^ 2 := by\n      simp [v, show ¬ (M + 1 < K) by omega, show M < K by omega]; ring\n    rw [h1, h2, h3, hc2]\n    have : (1 : ℝ) / ((M : ℝ) + 1) < ε / 2 := hM\n    have hK' : (K : ℝ) = M + 1 := by simp [hK]\n    rw [hK']\n    have hpos : (0 : ℝ) < (M : ℝ) + 1 := by positivity\n    calc (0 : ℝ) + (0 + 4 * (1 / (2 * ((M : ℝ) + 1)))) = 2 * (1 / ((M : ℝ) + 1)) := by\n          field_simp; ring\n      _ < 2 * (ε / 2) := by linarith\n      _ = ε := by ring",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "gap_criterion_discrete",
@@ -79,7 +79,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem gap_criterion_discrete (lam w : ℕ → ℝ) (n : ℕ) (hw : ∀ i, 0 ≤ w i) (C m : ℝ)\n    (h : ∀ t : ℝ, 1 ≤ t → ∑ i ∈ Finset.range n, w i * Real.exp (-t * lam i) ≤ C * Real.exp (-m * t)) :\n    ∀ i < n, 0 < w i → m ≤ lam i := by\n  intro i hi hwi\n  by_contra hlt\n  push Not at hlt\n  have hd : 0 < m - lam i := by linarith\n  have hwd : 0 < w i * (m - lam i) := mul_pos hwi hd\n  let t : ℝ := max 1 (C / (w i * (m - lam i)) + 1)\n  have ht1 : 1 ≤ t := le_max_left _ _\n  have hbig : C / (w i * (m - lam i)) + 1 ≤ t := le_max_right _ _\n  have hsingle : w i * Real.exp (-t * lam i) ≤ ∑ j ∈ Finset.range n, w j * Real.exp (-t * lam j) :=\n    Finset.single_le_sum (f := fun j => w j * Real.exp (-t * lam j))\n      (fun j _ => mul_nonneg (hw j) (Real.exp_pos _).le) (Finset.mem_range.mpr hi)\n  have key := hsingle.trans (h t ht1)\n  have e1 : Real.exp (-t * lam i) = Real.exp (-m * t) * Real.exp (t * (m - lam i)) := by\n    rw [← Real.exp_add]; congr 1; ring\n  rw [e1] at key\n  have hexp : 0 < Real.exp (-m * t) := Real.exp_pos _\n  have key2 : w i * Real.exp (t * (m - lam i)) ≤ C := by\n    have h3 : Real.exp (-m * t) * (w i * Real.exp (t * (m - lam i))) ≤ Real.exp (-m * t) * C := by\n      linarith [key]\n    exact le_of_mul_le_mul_left h3 hexp\n  have hlin : t * (m - lam i) + 1 ≤ Real.exp (t * (m - lam i)) := Real.add_one_le_exp _\n  have hC : C < w i * (m - lam i) * t := by\n    have h1 : C / (w i * (m - lam i)) < t := by linarith\n    have := (div_lt_iff₀ hwd).mp h1\n    linarith\n  have h4 : w i * (t * (m - lam i) + 1) ≤ w i * Real.exp (t * (m - lam i)) :=\n    mul_le_mul_of_nonneg_left hlin hwi.le\n  nlinarith",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "contraction_decay",
@@ -89,7 +89,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem contraction_decay (v : ℕ → ℝ) (q : ℝ) (hq : 0 ≤ q) (h : ∀ n, v (n + 1) ≤ q * v n) :\n    ∀ n, v n ≤ q ^ n * v 0 := by\n  intro n\n  induction n with\n  | zero => simp\n  | succ k ih =>\n    calc v (k + 1) ≤ q * v k := h k\n      _ ≤ q * (q ^ k * v 0) := mul_le_mul_of_nonneg_left ih hq\n      _ = q ^ (k + 1) * v 0 := by ring",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "gap_from_contraction",
@@ -99,7 +99,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem gap_from_contraction (q τ : ℝ) (hq : 0 < q) (hq1 : q < 1) (hτ : 0 < τ) :\n    0 < -Real.log q / τ :=\n  div_pos (neg_pos.mpr (Real.log_neg hq hq1)) hτ",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "pow_eq_exp_log",
@@ -109,7 +109,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem pow_eq_exp_log (q : ℝ) (hq : 0 < q) (n : ℕ) : q ^ n = Real.exp ((n : ℝ) * Real.log q) := by\n  rw [← Real.log_pow, Real.exp_log (pow_pos hq n)]",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "scale_split_uniform_gap",
@@ -119,7 +119,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem scale_split_uniform_gap (Δ : ℕ → ℝ) (hpos : ∀ L, 0 < Δ L) (m : ℝ) (hm : 0 < m) (L₀ : ℕ)\n    (h : ∀ L ≥ L₀, m ≤ Δ L) : ∃ m' > 0, ∀ L, m' ≤ Δ L := by\n  have aux : ∀ K : ℕ, ∃ m0 > 0, ∀ L < K, m0 ≤ Δ L := by\n    intro K\n    induction K with\n    | zero => exact ⟨1, one_pos, fun L hL => absurd hL (Nat.not_lt_zero _)⟩\n    | succ k ih =>\n      obtain ⟨m0, hm0, hk⟩ := ih\n      refine ⟨min m0 (Δ k), lt_min hm0 (hpos k), fun L hL => ?_⟩\n      rcases (by omega : L < k ∨ L = k) with hL | hL\n      · exact (min_le_left _ _).trans (hk L hL)\n      · subst hL; exact min_le_right _ _\n  obtain ⟨m0, hm0, hk⟩ := aux L₀\n  refine ⟨min m0 m, lt_min hm0 hm, fun L => ?_⟩\n  by_cases hL : L < L₀\n  · exact (min_le_left _ _).trans (hk L hL)\n  · exact (min_le_right _ _).trans (h L (not_lt.mp hL))",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "polymer_series_bound",
@@ -129,7 +129,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem polymer_series_bound (z : ℝ) (hz : |z| < 1) (N : ℕ) :\n    ∑ n ∈ Finset.range N, |z| ^ n ≤ 1 / (1 - |z|) := by\n  have h0 : 0 ≤ |z| := abs_nonneg z\n  have h1 : 0 < 1 - |z| := by linarith\n  have key : ∀ K : ℕ, (∑ n ∈ Finset.range K, |z| ^ n) * (1 - |z|) = 1 - |z| ^ K := by\n    intro K\n    induction K with\n    | zero => simp\n    | succ k ih => rw [Finset.sum_range_succ, add_mul, ih]; ring\n  rw [le_div_iff₀ h1, key N]\n  have : 0 ≤ |z| ^ N := pow_nonneg h0 N\n  linarith",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "poincare_variance_decay",
@@ -139,7 +139,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem poincare_variance_decay (V : ℕ → ℝ) (lam : ℝ) (_hl0 : 0 ≤ lam) (hl1 : lam ≤ 1)\n    (h : ∀ n, V (n + 1) ≤ (1 - lam) * V n) : ∀ n, V n ≤ (1 - lam) ^ n * V 0 :=\n  contraction_decay V (1 - lam) (by linarith) h",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "holonomy_gauge_abelian",
@@ -149,7 +149,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem holonomy_gauge_abelian {G X : Type*} [CommGroup G] (g : X → G) (U : X → X → G)\n    (p : Plaquette X) : holonomy (gaugeTransform g U) p = holonomy U p := by\n  rw [holonomy_gauge, mul_comm (g p.a), mul_assoc, mul_inv_cancel, mul_one]",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "z2_link_square",
@@ -169,7 +169,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem haar_left_invariant {G : Type*} [Group G] [Fintype G] (f : G → ℝ) (z : G) :\n    ∑ x, f (z * x) = ∑ x, f x :=\n  Fintype.sum_equiv (Equiv.mulLeft z) _ _ (fun _ => rfl)",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "elitzur_mechanism",
@@ -179,7 +179,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem elitzur_mechanism {G : Type*} [Group G] [Fintype G] (w O : G → ℝ) (z : G)\n    (hw : ∀ x, w (z * x) = w x) (hO : ∀ x, O (z * x) = -O x) : ∑ x, w x * O x = 0 := by\n  have hS : ∑ x, w (z * x) * O (z * x) = ∑ x, w x * O x :=\n    Fintype.sum_equiv (Equiv.mulLeft z) _ _ (fun _ => rfl)\n  have h2 : ∑ x, w (z * x) * O (z * x) = -∑ x, w x * O x := by\n    simp only [hw, hO, mul_neg, Finset.sum_neg_distrib]\n  linarith",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "z2_plaquette_expectation",
@@ -189,7 +189,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem z2_plaquette_expectation (β : ℝ) :\n    (∑ b : Bool, spin b * Real.exp (β * spin b)) / (∑ b : Bool, Real.exp (β * spin b)) =\n      Real.tanh β := by\n  simp only [Fintype.sum_bool, spin, ite_true, ite_false, Bool.false_eq_true]\n  rw [Real.tanh_eq_sinh_div_cosh, Real.sinh_eq, Real.cosh_eq]\n  have : 0 < Real.exp β + Real.exp (-β) := by positivity\n  field_simp\n  ring_nf",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "z2_wilson_loop_area_law",
@@ -199,7 +199,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem z2_wilson_loop_area_law (β : ℝ) (A : ℕ) :\n    (∑ s : Fin A → Bool, ∏ i, (spin (s i) * Real.exp (β * spin (s i)))) /\n      (∑ s : Fin A → Bool, ∏ i, Real.exp (β * spin (s i))) = Real.tanh β ^ A := by\n  rw [← Fintype.prod_sum (fun (_ : Fin A) (b : Bool) => spin b * Real.exp (β * spin b)),\n    ← Fintype.prod_sum (fun (_ : Fin A) (b : Bool) => Real.exp (β * spin b))]\n  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin]\n  rw [← div_pow, z2_plaquette_expectation]",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "z2_string_tension_pos",
@@ -209,7 +209,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem z2_string_tension_pos (β : ℝ) (hβ : 0 < β) : 0 < -Real.log (Real.tanh β) := by\n  have h0 : 0 < Real.tanh β := by\n    rw [Real.tanh_eq_sinh_div_cosh, Real.sinh_eq]\n    have : Real.exp (-β) < Real.exp β := Real.exp_lt_exp.mpr (by linarith)\n    exact div_pos (by linarith) (Real.cosh_pos β)\n  exact neg_pos.mpr (Real.log_neg h0 (Real.tanh_lt_one β))",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "z2_area_law_exponential",
@@ -219,7 +219,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem z2_area_law_exponential (β : ℝ) (hβ : 0 < β) (A : ℕ) :\n    Real.tanh β ^ A = Real.exp (-(-Real.log (Real.tanh β)) * A) := by\n  have h0 : 0 < Real.tanh β := by\n    have := z2_string_tension_pos β hβ\n    rw [Real.tanh_eq_sinh_div_cosh, Real.sinh_eq]\n    have : Real.exp (-β) < Real.exp β := Real.exp_lt_exp.mpr (by linarith)\n    exact div_pos (by linarith) (Real.cosh_pos β)\n  rw [neg_neg, mul_comm, ← Real.log_pow, Real.exp_log (pow_pos h0 A)]",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "z2_transfer_vacuum",
@@ -229,7 +229,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem z2_transfer_vacuum (β : ℝ) : applyT β (fun _ => 1) = fun _ => 2 * Real.cosh β := by\n  funext s\n  cases s <;> simp [applyT, transferZ2, spin, Real.cosh_eq] <;> ring",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "z2_transfer_excited",
@@ -239,7 +239,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem z2_transfer_excited (β : ℝ) (f : Bool → ℝ) (hf : f true + f false = 0) :\n    applyT β f = fun s => 2 * Real.sinh β * f s := by\n  have hff : f false = -f true := by linarith\n  funext s\n  cases s <;> simp [applyT, transferZ2, spin, Real.sinh_eq, hff] <;> ring",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "z2_transfer_spectrum",
@@ -249,7 +249,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem z2_transfer_spectrum (β : ℝ) (f : Bool → ℝ) :\n    applyT β f = fun s => 2 * Real.cosh β * ((f true + f false) / 2) +\n      2 * Real.sinh β * ((f true - f false) / 2) * spin s := by\n  funext s\n  cases s <;> simp [applyT, transferZ2, spin, Real.sinh_eq, Real.cosh_eq] <;> ring",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "z2_transfer_iterate",
@@ -259,7 +259,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem z2_transfer_iterate (β : ℝ) (f : Bool → ℝ) (hf : f true + f false = 0) (n : ℕ) :\n    (applyT β)^[n] f = fun s => (2 * Real.sinh β) ^ n * f s := by\n  induction n with\n  | zero => funext s; simp\n  | succ k ih =>\n    rw [Function.iterate_succ_apply', ih]\n    rw [z2_transfer_excited β _ (by rw [← mul_add, hf, mul_zero])]\n    funext s\n    ring",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "z2_transfer_gap",
@@ -269,7 +269,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem z2_transfer_gap (β : ℝ) (hβ : 0 < β) :\n    0 < 2 * Real.sinh β ∧ 2 * Real.sinh β < 2 * Real.cosh β ∧\n      2 * Real.sinh β / (2 * Real.cosh β) = Real.tanh β := by\n  have he : Real.exp (-β) < Real.exp β := Real.exp_lt_exp.mpr (by linarith)\n  have hp : 0 < Real.exp (-β) := Real.exp_pos _\n  refine ⟨?_, ?_, ?_⟩\n  · rw [Real.sinh_eq]; linarith\n  · rw [Real.sinh_eq, Real.cosh_eq]; linarith\n  · rw [Real.tanh_eq_sinh_div_cosh]\n    have hc : 0 < Real.cosh β := Real.cosh_pos β\n    field_simp",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "z2_mass_gap",
@@ -279,7 +279,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem z2_mass_gap (β : ℝ) (hβ : 0 < β) :\n    ∃ m > 0, ∀ n : ℕ, ∀ f : Bool → ℝ, f true + f false = 0 → ∀ s,\n      (applyT β)^[n] f s = (2 * Real.cosh β) ^ n * Real.exp (-m * n) * f s := by\n  refine ⟨-Real.log (Real.tanh β), z2_string_tension_pos β hβ, fun n f hf s => ?_⟩\n  rw [z2_transfer_iterate β f hf n, ← z2_area_law_exponential β hβ n,\n    Real.tanh_eq_sinh_div_cosh, ← mul_pow]\n  have hc : 0 < Real.cosh β := Real.cosh_pos β\n  have e : 2 * Real.cosh β * (Real.sinh β / Real.cosh β) = 2 * Real.sinh β := by\n    field_simp\n  rw [e]",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     },
     {
       "name": "complete_graph_gap_all",
@@ -289,7 +289,7 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem complete_graph_gap_all (n : ℕ) (v : Fin n → ℝ) (h : ∑ i, v i = 0) :\n    ∑ i, ∑ j, (v i - v j) ^ 2 = 2 * n * ∑ i, v i ^ 2 := by\n  have e : ∀ i j, (v i - v j) ^ 2 = v i ^ 2 + v j ^ 2 - 2 * v i * v j := fun i j => by ring\n  simp only [e, Finset.sum_sub_distrib, Finset.sum_add_distrib]\n  have h1 : ∑ i : Fin n, ∑ j : Fin n, 2 * v i * v j = 0 := by\n    simp only [← Finset.mul_sum, h, mul_zero, Finset.sum_const_zero]\n  rw [h1]\n  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← Finset.mul_sum]\n  ring",
-      "origin": "Claude as proposer, verified by Lean"
+      "origin": "AI-assisted, verified by Lean"
     }
   ],
   "_pathways": {
