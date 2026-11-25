@@ -1,7 +1,7 @@
 """
 Parameter families for conjecture mode. Each family is a generator yielding
 (name, lean_statement, description). Add your own: the engine will try to
-refute, recognise or prove every instance.
+refute, recognise, or prove every instance.
 """
 
 SUB = "₀₁₂₃₄₅₆₇₈₉"

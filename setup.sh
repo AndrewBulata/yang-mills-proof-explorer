@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Set up Lean 4, the Lean REPL and the part of Mathlib this engine's targets need.
+# Set up Lean 4, the Lean REPL, and the part of Mathlib this engine's targets need.
 # Tested on Linux x86_64 (2 cores, 7 GB RAM): about 25 minutes, mostly compiling Mathlib.
 #
 #   ./setup.sh            build only the Mathlib modules the blueprint imports (~2,000 files)

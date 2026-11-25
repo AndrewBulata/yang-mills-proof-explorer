@@ -1,7 +1,7 @@
 /-
   Verified.lean: every proof in this file is checked by Lean 4 against Mathlib.
   Part A closes the 10 targets the first engine run left open.
-  Part B: Haar invariance, the Elitzur mechanism, exact area law of 2D Z₂ gauge theory.
+  Part B: Haar invariance, the Elitzur mechanism, and the exact area law of 2D Z₂ gauge theory.
   Part C: transfer-matrix spectrum and mass gap of 2D Z₂ gauge theory at every coupling.
   Part D: the complete-graph gap for every n, generalised from conjecture-mode results.
   Part E: high-temperature (strong-coupling) expansion of Z₂ lattice gauge theory on any
@@ -332,7 +332,7 @@ theorem z2_mass_gap (β : ℝ) (hβ : 0 < β) :
 
 /-! ## Part D: generalisation suggested by conjecture mode
 
-Conjecture mode proved `complete_gap_n` for n = 3, 4, 5 and refuted the constant n + 1.
+Conjecture mode proved `complete_gap_n` for n = 3, 4, and 5, and refuted the constant n + 1.
 This is the statement for every n: on the complete graph with n sites, every mean-zero
 state has energy exactly n times its norm, so the gap is n (each ordered pair counted twice). -/
 

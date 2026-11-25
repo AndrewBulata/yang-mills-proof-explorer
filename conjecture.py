@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-conjecture.py: let the engine invent statements, then refute, recognise or prove them.
+conjecture.py: let the engine invent statements, then refute, recognise, or prove them.
 
 Loop (one round):
   1. GENERATE candidate statements

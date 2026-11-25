@@ -45,7 +45,7 @@ Run 2 proves the consequences in Lean:
 | `elitzur_mechanism` | An observable that flips sign under a symmetry of the weight has zero expectation |
 | `haar_left_invariant` | The counting (Haar) measure on a finite gauge group is translation invariant |
 
-These are textbook results, going back to Wegner (1971) and Balian, Drouffe and Itzykson (1975), formalized here. The gauge-fixing
+These are textbook results, going back to Wegner (1971) and Balian, Drouffe, and Itzykson (1975), formalized here. The gauge-fixing
 step, from link variables to independent plaquettes, is taken as given and is the
 natural next target. In four dimensions the analogous statement for SU(N) is the open
 confinement problem.
@@ -212,7 +212,7 @@ plaquette correlations for β < 1/(32n(d−1)), with only Lean's standard axioms
 predates the strong-coupling work here and covers more gauge groups.
 
 This repository takes a complementary route: the high-temperature (surface) expansion,
-polymer cancellation and lattice animals, aimed at **confinement** (the Wilson-loop area
+polymer cancellation, and lattice animals, aimed at **confinement** (the Wilson-loop area
 law) rather than the mass gap. Where results overlap, theirs came first.
 
 ## How it works
@@ -244,7 +244,7 @@ W=lean-workspace
 # tactic list only: free
 python3 proof_engine.py --project $W/ymproj --repl $W/repl/.lake/build/bin/repl --proposer static
 
-# with Claude proposing tactics, whole proofs and intermediate lemmas
+# with Claude proposing tactics, whole proofs, and intermediate lemmas
 pip install anthropic && export ANTHROPIC_API_KEY=...
 python3 proof_engine.py --project $W/ymproj --repl $W/repl/.lake/build/bin/repl \
     --proposer hybrid --decompose --rounds 3 --budget 20
