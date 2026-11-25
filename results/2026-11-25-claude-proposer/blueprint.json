@@ -1,5 +1,5 @@
 {
-  "preamble": "import Mathlib.Analysis.SpecialFunctions.Log.Basic\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.NoncommRing\nimport Mathlib.Tactic.Group\nimport Mathlib.Tactic.FieldSimp\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Abel\nimport Mathlib.Algebra.Order.Archimedean.Basic\nimport Mathlib.Algebra.BigOperators.Group.Finset.Basic\nimport Mathlib.Data.Int.Order.Units\nimport Mathlib.Tactic.GCongr\nopen BigOperators\n\nnamespace YM\n\ndef gaugeTransform {G X : Type*} [Group G] (g : X → G) (U : X → X → G) : X → X → G :=\n  fun x y => g x * U x y * (g y)⁻¹\n\nstructure Plaquette (X : Type*) where\n  a : X\n  b : X\n  c : X\n  d : X\n\ndef holonomy {G X : Type*} [Group G] (U : X → X → G) (p : Plaquette X) : G :=\n  U p.a p.b * U p.b p.c * U p.c p.d * U p.d p.a\n\nend YM\nopen YM\n\n/-- Z₂ spin: true ↦ +1, false ↦ -1. -/\ndef spin (b : Bool) : ℝ := if b then 1 else -1",
+  "preamble": "import Mathlib.Analysis.SpecialFunctions.Log.Basic\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.NoncommRing\nimport Mathlib.Tactic.Group\nimport Mathlib.Tactic.FieldSimp\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Abel\nimport Mathlib.Algebra.Order.Archimedean.Basic\nimport Mathlib.Algebra.BigOperators.Group.Finset.Basic\nimport Mathlib.Data.Int.Order.Units\nimport Mathlib.Tactic.GCongr\nopen BigOperators\n\nnamespace YM\n\ndef gaugeTransform {G X : Type*} [Group G] (g : X → G) (U : X → X → G) : X → X → G :=\n  fun x y => g x * U x y * (g y)⁻¹\n\nstructure Plaquette (X : Type*) where\n  a : X\n  b : X\n  c : X\n  d : X\n\ndef holonomy {G X : Type*} [Group G] (U : X → X → G) (p : Plaquette X) : G :=\n  U p.a p.b * U p.b p.c * U p.c p.d * U p.d p.a\n\nend YM\nopen YM\n\n/-- Z₂ spin: true ↦ +1, false ↦ -1. -/\ndef spin (b : Bool) : ℝ := if b then 1 else -1\n\nnoncomputable def transferZ2 (β : ℝ) (s s' : Bool) : ℝ := Real.exp (β * spin s * spin s')\n\nnoncomputable def applyT (β : ℝ) (f : Bool → ℝ) : Bool → ℝ := fun s => ∑ s', transferZ2 β s s' * f s'",
   "targets": [
     {
       "name": "jacobi_ring",
@@ -219,6 +219,76 @@
       "status": "proved",
       "depth": 0,
       "proof": "theorem z2_area_law_exponential (β : ℝ) (hβ : 0 < β) (A : ℕ) :\n    Real.tanh β ^ A = Real.exp (-(-Real.log (Real.tanh β)) * A) := by\n  have h0 : 0 < Real.tanh β := by\n    have := z2_string_tension_pos β hβ\n    rw [Real.tanh_eq_sinh_div_cosh, Real.sinh_eq]\n    have : Real.exp (-β) < Real.exp β := Real.exp_lt_exp.mpr (by linarith)\n    exact div_pos (by linarith) (Real.cosh_pos β)\n  rw [neg_neg, mul_comm, ← Real.log_pow, Real.exp_log (pow_pos h0 A)]",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "z2_transfer_vacuum",
+      "pathway": 8,
+      "about": "Transfer matrix of 2D Z2 gauge theory: the vacuum has eigenvalue 2 cosh β.",
+      "statement": "theorem z2_transfer_vacuum (β : ℝ) : applyT β (fun _ => 1) = fun _ => 2 * Real.cosh β",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem z2_transfer_vacuum (β : ℝ) : applyT β (fun _ => 1) = fun _ => 2 * Real.cosh β := by\n  funext s\n  cases s <;> simp [applyT, transferZ2, spin, Real.cosh_eq] <;> ring",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "z2_transfer_excited",
+      "pathway": 8,
+      "about": "Every state orthogonal to the vacuum has eigenvalue 2 sinh β.",
+      "statement": "theorem z2_transfer_excited (β : ℝ) (f : Bool → ℝ) (hf : f true + f false = 0) : applyT β f = fun s => 2 * Real.sinh β * f s",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem z2_transfer_excited (β : ℝ) (f : Bool → ℝ) (hf : f true + f false = 0) :\n    applyT β f = fun s => 2 * Real.sinh β * f s := by\n  have hff : f false = -f true := by linarith\n  funext s\n  cases s <;> simp [applyT, transferZ2, spin, Real.sinh_eq, hff] <;> ring",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "z2_transfer_spectrum",
+      "pathway": 8,
+      "about": "Full spectral decomposition: the spectrum is exactly {2 cosh β, 2 sinh β}.",
+      "statement": "theorem z2_transfer_spectrum (β : ℝ) (f : Bool → ℝ) : applyT β f = fun s => 2 * Real.cosh β * ((f true + f false) / 2) + 2 * Real.sinh β * ((f true - f false) / 2) * spin s",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem z2_transfer_spectrum (β : ℝ) (f : Bool → ℝ) :\n    applyT β f = fun s => 2 * Real.cosh β * ((f true + f false) / 2) +\n      2 * Real.sinh β * ((f true - f false) / 2) * spin s := by\n  funext s\n  cases s <;> simp [applyT, transferZ2, spin, Real.sinh_eq, Real.cosh_eq] <;> ring",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "z2_transfer_iterate",
+      "pathway": 8,
+      "about": "n steps of Euclidean time multiply an excited state by (2 sinh β)^n.",
+      "statement": "theorem z2_transfer_iterate (β : ℝ) (f : Bool → ℝ) (hf : f true + f false = 0) (n : ℕ) : (applyT β)^[n] f = fun s => (2 * Real.sinh β) ^ n * f s",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem z2_transfer_iterate (β : ℝ) (f : Bool → ℝ) (hf : f true + f false = 0) (n : ℕ) :\n    (applyT β)^[n] f = fun s => (2 * Real.sinh β) ^ n * f s := by\n  induction n with\n  | zero => funext s; simp\n  | succ k ih =>\n    rw [Function.iterate_succ_apply', ih]\n    rw [z2_transfer_excited β _ (by rw [← mul_add, hf, mul_zero])]\n    funext s\n    ring",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "z2_transfer_gap",
+      "pathway": 8,
+      "about": "For β > 0: 0 < 2 sinh β < 2 cosh β, with ratio tanh β.",
+      "statement": "theorem z2_transfer_gap (β : ℝ) (hβ : 0 < β) : 0 < 2 * Real.sinh β ∧ 2 * Real.sinh β < 2 * Real.cosh β ∧ 2 * Real.sinh β / (2 * Real.cosh β) = Real.tanh β",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem z2_transfer_gap (β : ℝ) (hβ : 0 < β) :\n    0 < 2 * Real.sinh β ∧ 2 * Real.sinh β < 2 * Real.cosh β ∧\n      2 * Real.sinh β / (2 * Real.cosh β) = Real.tanh β := by\n  have he : Real.exp (-β) < Real.exp β := Real.exp_lt_exp.mpr (by linarith)\n  have hp : 0 < Real.exp (-β) := Real.exp_pos _\n  refine ⟨?_, ?_, ?_⟩\n  · rw [Real.sinh_eq]; linarith\n  · rw [Real.sinh_eq, Real.cosh_eq]; linarith\n  · rw [Real.tanh_eq_sinh_div_cosh]\n    have hc : 0 < Real.cosh β := Real.cosh_pos β\n    field_simp",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "z2_mass_gap",
+      "pathway": 8,
+      "about": "Mass gap of 2D Z2 gauge theory at every coupling: excited states decay as exp(-m n) relative to the vacuum, m = -log tanh β > 0.",
+      "statement": "theorem z2_mass_gap (β : ℝ) (hβ : 0 < β) : ∃ m > 0, ∀ n : ℕ, ∀ f : Bool → ℝ, f true + f false = 0 → ∀ s, (applyT β)^[n] f s = (2 * Real.cosh β) ^ n * Real.exp (-m * n) * f s",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem z2_mass_gap (β : ℝ) (hβ : 0 < β) :\n    ∃ m > 0, ∀ n : ℕ, ∀ f : Bool → ℝ, f true + f false = 0 → ∀ s,\n      (applyT β)^[n] f s = (2 * Real.cosh β) ^ n * Real.exp (-m * n) * f s := by\n  refine ⟨-Real.log (Real.tanh β), z2_string_tension_pos β hβ, fun n f hf s => ?_⟩\n  rw [z2_transfer_iterate β f hf n, ← z2_area_law_exponential β hβ n,\n    Real.tanh_eq_sinh_div_cosh, ← mul_pow]\n  have hc : 0 < Real.cosh β := Real.cosh_pos β\n  have e : 2 * Real.cosh β * (Real.sinh β / Real.cosh β) = 2 * Real.sinh β := by\n    field_simp\n  rw [e]",
+      "origin": "Claude as proposer, verified by Lean"
+    },
+    {
+      "name": "complete_graph_gap_all",
+      "pathway": 0,
+      "about": "Complete graph on n sites: energy = n × norm for every mean-zero state, every n. Generalised from conjecture-mode results.",
+      "statement": "theorem complete_graph_gap_all (n : ℕ) (v : Fin n → ℝ) (h : ∑ i, v i = 0) : ∑ i, ∑ j, (v i - v j) ^ 2 = 2 * n * ∑ i, v i ^ 2",
+      "status": "proved",
+      "depth": 0,
+      "proof": "theorem complete_graph_gap_all (n : ℕ) (v : Fin n → ℝ) (h : ∑ i, v i = 0) :\n    ∑ i, ∑ j, (v i - v j) ^ 2 = 2 * n * ∑ i, v i ^ 2 := by\n  have e : ∀ i j, (v i - v j) ^ 2 = v i ^ 2 + v j ^ 2 - 2 * v i * v j := fun i j => by ring\n  simp only [e, Finset.sum_sub_distrib, Finset.sum_add_distrib]\n  have h1 : ∑ i : Fin n, ∑ j : Fin n, 2 * v i * v j = 0 := by\n    simp only [← Finset.mul_sum, h, mul_zero, Finset.sum_const_zero]\n  rw [h1]\n  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← Finset.mul_sum]\n  ring",
       "origin": "Claude as proposer, verified by Lean"
     }
   ],

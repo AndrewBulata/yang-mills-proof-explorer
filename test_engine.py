@@ -114,7 +114,21 @@ def test_pathway_filter():
     assert out == {"a": "proved", "b": "open"}, out
 
 
+def test_conjecture_surgery():
+    import conjecture as cj
+    st = "theorem two_site_gap (v₀ v₁ : ℝ) (h : v₀ + v₁ = 0) : (v₀ - v₁) ^ 2 ≥ 2 * (v₀ ^ 2 + v₁ ^ 2)"
+    name, binders, prop = cj.split_statement(st)
+    assert name == "two_site_gap" and binders.endswith("= 0)") and prop.startswith("(v₀ - v₁)")
+    assert cj.negation(st).startswith("theorem two_site_gap_refuted : ¬ (∀ (v₀ v₁ : ℝ)")
+    muts = {d for _, _, d in cj.mutate("two_site_gap", st)}
+    assert "constant 2 → 3" in muts and "hypothesis h dropped" in muts and "≥ → >" in muts
+    assert all("^ 3" not in s2 for _, s2, _ in cj.mutate("two_site_gap", st)), "exponents must not mutate"
+    assert len(cj.witness_tactics(st)) == 36
+    assert all("\n" not in t for t in cj.witness_tactics(st)), "REPL tactics must be one line"
+
+
 if __name__ == "__main__":
+    test_conjecture_surgery()
     test_pathway_filter()
     test_search_finds_proof()
     test_budget_exhaustion_reports_stuck()

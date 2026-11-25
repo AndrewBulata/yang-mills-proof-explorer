@@ -13,14 +13,15 @@ along the known routes of attack and records exactly where each route gets stuck
 
 ## Results so far
 
-**All 22 targets are proved and checked by Lean 4 against Mathlib.** Every proof
+**All 29 targets are proved and checked by Lean 4 against Mathlib.** Every proof
 depends only on Lean's three standard axioms (`propext`, `Classical.choice`,
 `Quot.sound`). The full proof library is [`lean/Verified.lean`](lean/Verified.lean).
 
 | Run | Proposer | Proved | Output |
 | --- | --- | --- | --- |
 | 1 | Tactic list, engine search (3,592 steps) | 6 of 16 | [`results/2026-11-25-static/`](results/2026-11-25-static/) |
-| 2 | Claude as proposer, every proof verified by Lean | remaining 10, plus 6 new | [`results/2026-11-25-claude-proposer/`](results/2026-11-25-claude-proposer/) |
+| 2 | Claude as proposer, every proof verified by Lean | remaining 10, plus 13 new | [`results/2026-11-25-claude-proposer/`](results/2026-11-25-claude-proposer/) |
+| 3 | Conjecture mode: engine invents and tests its own statements | 45 explored: 16 proved, 18 refuted, 11 open | [`results/2026-11-25-conjecture-run/`](results/2026-11-25-conjecture-run/) |
 
 The tactic list proved none of the 6 new results on its own. They need multi-step
 plans (reindexing a sum over a group, hyperbolic identities, a product of sums),
@@ -45,6 +46,58 @@ These are textbook results, going back to Wegner (1971) and Balian, Drouffe and 
 step, from link variables to independent plaquettes, is taken as given and is the
 natural next target. In four dimensions the analogous statement for SU(N) is the open
 confinement problem.
+
+### Mass gap of 2D Z₂ gauge theory, from the transfer matrix
+
+The Yang–Mills question asks for a spectral gap of the transfer matrix above the vacuum.
+For 2D Z₂ lattice gauge theory this can be answered exactly, and Lean now verifies it.
+The transfer matrix `(T f)(s) = Σ_{s'} exp(β s s') f(s')` acts on one Z₂ variable:
+
+| Theorem | Statement |
+| --- | --- |
+| `z2_transfer_vacuum` | The vacuum has eigenvalue 2 cosh β |
+| `z2_transfer_excited` | Every state orthogonal to the vacuum has eigenvalue 2 sinh β |
+| `z2_transfer_spectrum` | The spectrum is exactly {2 cosh β, 2 sinh β} |
+| `z2_transfer_iterate` | n Euclidean time steps multiply an excited state by (2 sinh β)ⁿ |
+| `z2_transfer_gap` | For β > 0: 0 < 2 sinh β < 2 cosh β, ratio tanh β |
+| `z2_mass_gap` | **There is m > 0 with excited states decaying as exp(−m n) relative to the vacuum, at every coupling; m = −log tanh β** |
+
+As with the area law, the reduction of the 2D theory to this single-variable transfer
+matrix (axial gauge) is taken as given.
+
+### Conjecture mode: the engine proposes its own statements
+
+`conjecture.py` turns the engine from a prover into an explorer. Each round it
+generates candidate statements, then for each one tries to:
+
+1. **refute** it, by proving its negation with a search over small integer counterexamples;
+2. **recognise** it, with one `exact?` call that detects results already in Mathlib;
+3. **prove** it, with the usual best-first search.
+
+Proved statements join the library and seed the next round. Candidates come from
+mutations of proved theorems (constants ±1, strict vs non-strict, dropped hypotheses),
+parameter families in `families.py`, and, with an API key, conjectures proposed by Claude.
+Every verdict is a Lean-checked proof, including every refutation.
+
+What the first run found on its own (full report:
+[`conjectures.md`](results/2026-11-25-conjecture-run/conjectures.md)):
+
+- **The massless gap closes.** "An n-site chain has gap ≥ 1" is proved for n = 2 and
+  refuted for n = 4, with the counterexample (3, 1, −1, −3): energy 12, norm 20. The true
+  gap 2 − 2cos(π/n) falls below 1 at n = 4.
+- **Sharp constants.** The gap constants in `two_site_gap`, `three_site_gap`,
+  `complete_gap_3` and `complete_gap_4` are optimal: raising each by one is refuted.
+- **Necessary hypotheses.** Dropping the mean-zero condition, `0 < q` in
+  `gap_from_contraction`, or `0 < β` in `z2_string_tension_pos` is refuted in each case.
+- **A pattern to generalise.** The complete-graph gap is n for n = 3, 4, 5. Claude then
+  proved it for every n (`complete_graph_gap_all`), the step an AI proposer adds to the loop.
+
+```bash
+python3 conjecture.py --project $W/ymproj --repl $W/repl/.lake/build/bin/repl \
+    --blueprint results/2026-11-25-claude-proposer/blueprint.json \
+    --sources mutate,families --rounds 2 --only two_site_gap,three_site_gap
+# add llm to --sources (with ANTHROPIC_API_KEY set) for Claude-generated conjectures
+```
 
 ### All targets
 
@@ -72,6 +125,13 @@ confinement problem.
 | `z2_wilson_loop_area_law` | confinement | ⟨W⟩ = (tanh β)^A in 2D Z₂ gauge theory | Claude |
 | `z2_string_tension_pos` | confinement | σ = −log tanh β > 0 for all β > 0 | Claude |
 | `z2_area_law_exponential` | confinement | ⟨W⟩ = exp(−σA) | Claude |
+| `z2_transfer_vacuum` | confinement | Vacuum eigenvalue 2 cosh β | Claude |
+| `z2_transfer_excited` | confinement | Excited eigenvalue 2 sinh β | Claude |
+| `z2_transfer_spectrum` | confinement | Spectrum is exactly {2 cosh β, 2 sinh β} | Claude |
+| `z2_transfer_iterate` | confinement | (2 sinh β)ⁿ decay of excited states | Claude |
+| `z2_transfer_gap` | confinement | 0 < 2 sinh β < 2 cosh β for β > 0 | Claude |
+| `z2_mass_gap` | confinement | Mass gap m = −log tanh β > 0 at every coupling | Claude |
+| `complete_graph_gap_all` | foundations | Complete-graph gap is n for every n | Claude (from conjecture mode) |
 
 ## How it works
 

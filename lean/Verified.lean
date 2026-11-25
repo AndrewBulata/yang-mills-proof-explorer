@@ -1,8 +1,9 @@
 /-
   Verified.lean: every proof in this file is checked by Lean 4 against Mathlib.
   Part A closes the 10 targets the first engine run left open.
-  Part B adds new results: Haar invariance, the Elitzur mechanism, and the exact
-  area law and string tension of 2D Z₂ lattice gauge theory.
+  Part B: Haar invariance, the Elitzur mechanism, exact area law of 2D Z₂ gauge theory.
+  Part C: transfer-matrix spectrum and mass gap of 2D Z₂ gauge theory at every coupling.
+  Part D: the complete-graph gap for every n, generalised from conjecture-mode results.
   Axioms used: only propext, Classical.choice, Quot.sound (Lean's standard three).
 -/
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
@@ -243,3 +244,94 @@ theorem z2_area_law_exponential (β : ℝ) (hβ : 0 < β) (A : ℕ) :
     have : Real.exp (-β) < Real.exp β := Real.exp_lt_exp.mpr (by linarith)
     exact div_pos (by linarith) (Real.cosh_pos β)
   rw [neg_neg, mul_comm, ← Real.log_pow, Real.exp_log (pow_pos h0 A)]
+
+
+/-! ## Part C: transfer-matrix mass gap for 2D Z₂ gauge theory
+
+In axial gauge, 2D Z₂ lattice gauge theory on a strip reduces to a chain of independent
+plaquette spins, and its transfer matrix acts on functions of one Z₂ variable as
+`(T f)(s) = Σ_{s'} exp(β s s') f(s')`. This section computes its full spectrum and proves
+the gap above the vacuum: the Yang–Mills mass-gap question, answered exactly in a model
+where it can be. -/
+
+/-- The Z₂ transfer matrix kernel. -/
+noncomputable def transferZ2 (β : ℝ) (s s' : Bool) : ℝ := Real.exp (β * spin s * spin s')
+
+/-- The transfer matrix acting on wavefunctions `f : Bool → ℝ`. -/
+noncomputable def applyT (β : ℝ) (f : Bool → ℝ) : Bool → ℝ := fun s => ∑ s', transferZ2 β s s' * f s'
+
+/-- The vacuum (constant wavefunction) has eigenvalue 2 cosh β. -/
+theorem z2_transfer_vacuum (β : ℝ) : applyT β (fun _ => 1) = fun _ => 2 * Real.cosh β := by
+  funext s
+  cases s <;> simp [applyT, transferZ2, spin, Real.cosh_eq] <;> ring
+
+/-- Every state orthogonal to the vacuum is an eigenvector with eigenvalue 2 sinh β. -/
+theorem z2_transfer_excited (β : ℝ) (f : Bool → ℝ) (hf : f true + f false = 0) :
+    applyT β f = fun s => 2 * Real.sinh β * f s := by
+  have hff : f false = -f true := by linarith
+  funext s
+  cases s <;> simp [applyT, transferZ2, spin, Real.sinh_eq, hff] <;> ring
+
+/-- Full spectral decomposition: T acts as 2 cosh β on the vacuum component and as
+2 sinh β on the orthogonal component. The spectrum is exactly {2 cosh β, 2 sinh β}. -/
+theorem z2_transfer_spectrum (β : ℝ) (f : Bool → ℝ) :
+    applyT β f = fun s => 2 * Real.cosh β * ((f true + f false) / 2) +
+      2 * Real.sinh β * ((f true - f false) / 2) * spin s := by
+  funext s
+  cases s <;> simp [applyT, transferZ2, spin, Real.sinh_eq, Real.cosh_eq] <;> ring
+
+/-- Iterating: n time steps multiply an excited state by (2 sinh β)ⁿ. -/
+theorem z2_transfer_iterate (β : ℝ) (f : Bool → ℝ) (hf : f true + f false = 0) (n : ℕ) :
+    (applyT β)^[n] f = fun s => (2 * Real.sinh β) ^ n * f s := by
+  induction n with
+  | zero => funext s; simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', ih]
+    rw [z2_transfer_excited β _ (by rw [← mul_add, hf, mul_zero])]
+    funext s
+    ring
+
+/-- The gap: for β > 0 the excited eigenvalue is positive and strictly below the vacuum's,
+with ratio tanh β. -/
+theorem z2_transfer_gap (β : ℝ) (hβ : 0 < β) :
+    0 < 2 * Real.sinh β ∧ 2 * Real.sinh β < 2 * Real.cosh β ∧
+      2 * Real.sinh β / (2 * Real.cosh β) = Real.tanh β := by
+  have he : Real.exp (-β) < Real.exp β := Real.exp_lt_exp.mpr (by linarith)
+  have hp : 0 < Real.exp (-β) := Real.exp_pos _
+  refine ⟨?_, ?_, ?_⟩
+  · rw [Real.sinh_eq]; linarith
+  · rw [Real.sinh_eq, Real.cosh_eq]; linarith
+  · rw [Real.tanh_eq_sinh_div_cosh]
+    have hc : 0 < Real.cosh β := Real.cosh_pos β
+    field_simp
+
+/-- **Mass gap of 2D Z₂ lattice gauge theory at every coupling.** There is m > 0 such that
+every state orthogonal to the vacuum decays, relative to the vacuum, as exp(-m n) after
+n steps of Euclidean time. Explicitly m = -log tanh β. -/
+theorem z2_mass_gap (β : ℝ) (hβ : 0 < β) :
+    ∃ m > 0, ∀ n : ℕ, ∀ f : Bool → ℝ, f true + f false = 0 → ∀ s,
+      (applyT β)^[n] f s = (2 * Real.cosh β) ^ n * Real.exp (-m * n) * f s := by
+  refine ⟨-Real.log (Real.tanh β), z2_string_tension_pos β hβ, fun n f hf s => ?_⟩
+  rw [z2_transfer_iterate β f hf n, ← z2_area_law_exponential β hβ n,
+    Real.tanh_eq_sinh_div_cosh, ← mul_pow]
+  have hc : 0 < Real.cosh β := Real.cosh_pos β
+  have e : 2 * Real.cosh β * (Real.sinh β / Real.cosh β) = 2 * Real.sinh β := by
+    field_simp
+  rw [e]
+
+
+/-! ## Part D: generalisation suggested by conjecture mode
+
+Conjecture mode proved `complete_gap_n` for n = 3, 4, 5 and refuted the constant n + 1.
+This is the statement for every n: on the complete graph with n sites, every mean-zero
+state has energy exactly n times its norm, so the gap is n (each ordered pair counted twice). -/
+
+theorem complete_graph_gap_all (n : ℕ) (v : Fin n → ℝ) (h : ∑ i, v i = 0) :
+    ∑ i, ∑ j, (v i - v j) ^ 2 = 2 * n * ∑ i, v i ^ 2 := by
+  have e : ∀ i j, (v i - v j) ^ 2 = v i ^ 2 + v j ^ 2 - 2 * v i * v j := fun i j => by ring
+  simp only [e, Finset.sum_sub_distrib, Finset.sum_add_distrib]
+  have h1 : ∑ i : Fin n, ∑ j : Fin n, 2 * v i * v j = 0 := by
+    simp only [← Finset.mul_sum, h, mul_zero, Finset.sum_const_zero]
+  rw [h1]
+  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← Finset.mul_sum]
+  ring

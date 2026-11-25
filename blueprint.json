@@ -1,5 +1,5 @@
 {
-  "preamble": "import Mathlib.Analysis.SpecialFunctions.Log.Basic\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.NoncommRing\nimport Mathlib.Tactic.Group\nimport Mathlib.Tactic.FieldSimp\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Abel\nimport Mathlib.Algebra.Order.Archimedean.Basic\nimport Mathlib.Algebra.BigOperators.Group.Finset.Basic\nimport Mathlib.Data.Int.Order.Units\nimport Mathlib.Tactic.GCongr\nopen BigOperators\n\nnamespace YM\n\ndef gaugeTransform {G X : Type*} [Group G] (g : X → G) (U : X → X → G) : X → X → G :=\n  fun x y => g x * U x y * (g y)⁻¹\n\nstructure Plaquette (X : Type*) where\n  a : X\n  b : X\n  c : X\n  d : X\n\ndef holonomy {G X : Type*} [Group G] (U : X → X → G) (p : Plaquette X) : G :=\n  U p.a p.b * U p.b p.c * U p.c p.d * U p.d p.a\n\nend YM\nopen YM\n\n/-- Z₂ spin: true ↦ +1, false ↦ -1. -/\ndef spin (b : Bool) : ℝ := if b then 1 else -1",
+  "preamble": "import Mathlib.Analysis.SpecialFunctions.Log.Basic\nimport Mathlib.Tactic.Linarith\nimport Mathlib.Tactic.Positivity\nimport Mathlib.Tactic.NoncommRing\nimport Mathlib.Tactic.Group\nimport Mathlib.Tactic.FieldSimp\nimport Mathlib.Tactic.Ring\nimport Mathlib.Tactic.Abel\nimport Mathlib.Algebra.Order.Archimedean.Basic\nimport Mathlib.Algebra.BigOperators.Group.Finset.Basic\nimport Mathlib.Data.Int.Order.Units\nimport Mathlib.Tactic.GCongr\nopen BigOperators\n\nnamespace YM\n\ndef gaugeTransform {G X : Type*} [Group G] (g : X → G) (U : X → X → G) : X → X → G :=\n  fun x y => g x * U x y * (g y)⁻¹\n\nstructure Plaquette (X : Type*) where\n  a : X\n  b : X\n  c : X\n  d : X\n\ndef holonomy {G X : Type*} [Group G] (U : X → X → G) (p : Plaquette X) : G :=\n  U p.a p.b * U p.b p.c * U p.c p.d * U p.d p.a\n\nend YM\nopen YM\n\n/-- Z₂ spin: true ↦ +1, false ↦ -1. -/\ndef spin (b : Bool) : ℝ := if b then 1 else -1\n\nnoncomputable def transferZ2 (β : ℝ) (s s' : Bool) : ℝ := Real.exp (β * spin s * spin s')\n\nnoncomputable def applyT (β : ℝ) (f : Bool → ℝ) : Bool → ℝ := fun s => ∑ s', transferZ2 β s s' * f s'",
   "targets": [
     {
       "name": "jacobi_ring",
@@ -174,6 +174,62 @@
       "pathway": 8,
       "about": "Area law in exponential form: tanh(β)^A = exp(-σA) with σ = -log tanh β.",
       "statement": "theorem z2_area_law_exponential (β : ℝ) (hβ : 0 < β) (A : ℕ) : Real.tanh β ^ A = Real.exp (-(-Real.log (Real.tanh β)) * A)",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "z2_transfer_vacuum",
+      "pathway": 8,
+      "about": "Transfer matrix of 2D Z2 gauge theory: the vacuum has eigenvalue 2 cosh β.",
+      "statement": "theorem z2_transfer_vacuum (β : ℝ) : applyT β (fun _ => 1) = fun _ => 2 * Real.cosh β",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "z2_transfer_excited",
+      "pathway": 8,
+      "about": "Every state orthogonal to the vacuum has eigenvalue 2 sinh β.",
+      "statement": "theorem z2_transfer_excited (β : ℝ) (f : Bool → ℝ) (hf : f true + f false = 0) : applyT β f = fun s => 2 * Real.sinh β * f s",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "z2_transfer_spectrum",
+      "pathway": 8,
+      "about": "Full spectral decomposition: the spectrum is exactly {2 cosh β, 2 sinh β}.",
+      "statement": "theorem z2_transfer_spectrum (β : ℝ) (f : Bool → ℝ) : applyT β f = fun s => 2 * Real.cosh β * ((f true + f false) / 2) + 2 * Real.sinh β * ((f true - f false) / 2) * spin s",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "z2_transfer_iterate",
+      "pathway": 8,
+      "about": "n steps of Euclidean time multiply an excited state by (2 sinh β)^n.",
+      "statement": "theorem z2_transfer_iterate (β : ℝ) (f : Bool → ℝ) (hf : f true + f false = 0) (n : ℕ) : (applyT β)^[n] f = fun s => (2 * Real.sinh β) ^ n * f s",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "z2_transfer_gap",
+      "pathway": 8,
+      "about": "For β > 0: 0 < 2 sinh β < 2 cosh β, with ratio tanh β.",
+      "statement": "theorem z2_transfer_gap (β : ℝ) (hβ : 0 < β) : 0 < 2 * Real.sinh β ∧ 2 * Real.sinh β < 2 * Real.cosh β ∧ 2 * Real.sinh β / (2 * Real.cosh β) = Real.tanh β",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "z2_mass_gap",
+      "pathway": 8,
+      "about": "Mass gap of 2D Z2 gauge theory at every coupling: excited states decay as exp(-m n) relative to the vacuum, m = -log tanh β > 0.",
+      "statement": "theorem z2_mass_gap (β : ℝ) (hβ : 0 < β) : ∃ m > 0, ∀ n : ℕ, ∀ f : Bool → ℝ, f true + f false = 0 → ∀ s, (applyT β)^[n] f s = (2 * Real.cosh β) ^ n * Real.exp (-m * n) * f s",
+      "status": "open",
+      "depth": 0
+    },
+    {
+      "name": "complete_graph_gap_all",
+      "pathway": 0,
+      "about": "Complete graph on n sites: energy = n × norm for every mean-zero state, every n. Generalised from conjecture-mode results.",
+      "statement": "theorem complete_graph_gap_all (n : ℕ) (v : Fin n → ℝ) (h : ∑ i, v i = 0) : ∑ i, ∑ j, (v i - v j) ^ 2 = 2 * n * ∑ i, v i ^ 2",
       "status": "open",
       "depth": 0
     }
