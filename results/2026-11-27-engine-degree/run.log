@@ -1,0 +1,33 @@
+
+=== round 1: 6 open targets ===
+
+> planeOf_lt  (depth 0, attempt 1)
+  PROVED
+
+> planeOf_gt  (depth 0, attempt 1)
+  PROVED
+
+> card_bd  (depth 0, attempt 1)
+  PROVED
+
+> mem_bd_cand  (depth 0, attempt 1)
+  not yet. stuck at: d N : ℕ
+inst✝ : NeZero N
+l : Link d N
+q : Plaq d N
+hl : l ∈ bd q
+⊢ ∃ c, cand l c = some q
+
+> card_plaqsOf  (depth 0, attempt 1)
+  not yet. stuck at: d N : ℕ
+inst✝ : NeZero N
+l : Link d N
+⊢ (plaqsOf l).card ≤ 2 * d
+
+> degree_bound  (depth 0, attempt 1)
+  bad statement: Statement does not elaborate: failed to synthesize instance of type class
+  DecidableRel (HTE.share bd)
+
+Hint: Type class instance resolution failures can be inspected with the `set_option trace.Meta.synthInstance true` command.
+
+Summary: 3/6 proved. Blueprint saved to /home/claude/degree_blueprint.json

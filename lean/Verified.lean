@@ -17,6 +17,9 @@
   Part I: several pieces along the loop, handled by induction on the seed plaquettes; the
           strong-coupling area law with perimeter correction, uniform in the volume, on any
           lattice, given only a degree bound and the minimal area.
+  Part J: the degree bound on the hypercubic lattice (at most 8d plaquettes share a link
+          with a given one) and the explicit 4D area law, ⟨W_C⟩ ≤ (2048 tanh β)^A (1 + 1/1024)^m
+          for tanh β ≤ 1/2048, with only the minimal area as a hypothesis.
   Axioms used: only propext, Classical.choice, Quot.sound (Lean's standard three).
 -/
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
@@ -1418,3 +1421,113 @@ theorem strong_coupling_area_law_perimeter (bd : P → Finset L) (β : ℝ) (hβ
     (tanh_nonneg' β hβ) htτ hτ hΔτ A 𝒯 h𝒯prop
 
 end HTE
+
+
+/-! ## Part J: the degree bound on the hypercubic lattice, and an explicit 4D area law
+
+In d dimensions every link lies in at most 2d plaquettes (`card_plaqsOf`): for each other
+direction β, the plaquette in the plane of the link and β based at the link's site, or one
+step back along β. A plaquette has at most 4 links (`card_bd`), so it shares a link with at
+most 8d plaquettes (`degree_bound`). In 4D that is Δ = 32, which discharges the degree
+hypothesis of Part I and gives a fully explicit strong-coupling area law
+(`strong_coupling_area_law_4d_explicit`). Only the minimal area remains as a hypothesis. -/
+
+namespace Hypercubic
+
+variable {d N : ℕ} [NeZero N]
+
+/-- The plaquette plane spanned by directions α and β, ordered; none if α = β. -/
+def planeOf (α β : Fin d) : Option {q : Fin d × Fin d // q.1 < q.2} :=
+  if h : α < β then some ⟨(α, β), h⟩ else if h' : β < α then some ⟨(β, α), h'⟩ else none
+
+/-- Candidate plaquettes containing link l: plane {l's direction, β}, based at l's site
+(true) or one step back along β (false). -/
+def cand (l : Link d N) (c : Fin d × Bool) : Option (Plaq d N) :=
+  (planeOf l.2 c.1).map (fun pl => (if c.2 then l.1 else l.1 - e c.1, pl))
+
+open Classical in
+/-- Plaquettes whose boundary contains l. -/
+noncomputable def plaqsOf (l : Link d N) : Finset (Plaq d N) :=
+  Finset.univ.filter (fun q => l ∈ bd q)
+
+-- found by the engine (hint list supplied by the proposer)
+theorem planeOf_lt (α β : Fin d) (h : α < β) :
+    (planeOf α β : Option {q : Fin d × Fin d // q.1 < q.2}) = some ⟨(α, β), h⟩ := by
+  simp [planeOf, h]
+
+-- found by the engine (hint list supplied by the proposer)
+theorem planeOf_gt (α β : Fin d) (h : β < α) :
+    (planeOf α β : Option {q : Fin d × Fin d // q.1 < q.2}) = some ⟨(β, α), h⟩ := by
+  simp [planeOf, h, not_lt.mpr h.le]
+
+-- found by the engine (hint list supplied by the proposer)
+theorem card_bd (q : Plaq d N) : (bd q).card ≤ 4 := by
+  exact Finset.card_le_four
+
+/-- Every plaquette containing l is one of the candidates. -/
+theorem mem_bd_cand (l : Link d N) (q : Plaq d N) (hl : l ∈ bd q) : ∃ c, cand l c = some q := by
+  obtain ⟨x, ⟨⟨μ, ν⟩, h⟩⟩ := q
+  simp only [bd, Finset.mem_insert, Finset.mem_singleton] at hl
+  rcases hl with rfl | rfl | rfl | rfl
+  · exact ⟨(ν, true), by simp [cand, planeOf_lt μ ν h]⟩
+  · exact ⟨(μ, false), by simp [cand, planeOf_gt ν μ h]⟩
+  · exact ⟨(ν, false), by simp [cand, planeOf_lt μ ν h]⟩
+  · exact ⟨(μ, true), by simp [cand, planeOf_gt ν μ h]⟩
+
+/-- **A link lies in at most 2d plaquettes.** -/
+theorem card_plaqsOf (l : Link d N) : (plaqsOf l).card ≤ 2 * d := by
+  classical
+  calc (plaqsOf l).card
+      ≤ ((Finset.univ : Finset (Fin d × Bool)).image (cand l)).card := by
+        apply Finset.card_le_card_of_injOn some
+        · intro q hq
+          obtain ⟨c, hc⟩ := mem_bd_cand l q (Finset.mem_filter.mp hq).2
+          exact Finset.mem_image.mpr ⟨c, Finset.mem_univ _, hc⟩
+        · intro a _ b _ h
+          exact Option.some_injective _ h
+    _ ≤ (Finset.univ : Finset (Fin d × Bool)).card := Finset.card_image_le
+    _ = 2 * d := by
+        rw [Finset.card_univ, Fintype.card_prod, Fintype.card_fin, Fintype.card_bool]; ring
+
+open Classical in
+/-- **Degree bound: each plaquette shares a link with at most 8d plaquettes.** -/
+theorem degree_bound (q : Plaq d N) :
+    (Animals.nbr (HTE.share (@bd d N _)) q).card ≤ 8 * d := by
+  classical
+  have hsub : Animals.nbr (HTE.share (@bd d N _)) q ⊆ (bd q).biUnion plaqsOf := by
+    intro q' hq'
+    obtain ⟨l, hl, hl'⟩ := (Finset.mem_filter.mp hq').2
+    exact Finset.mem_biUnion.mpr ⟨l, hl, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hl'⟩⟩
+  calc (Animals.nbr (HTE.share (@bd d N _)) q).card
+      ≤ ((bd q).biUnion plaqsOf).card := Finset.card_le_card hsub
+    _ ≤ ∑ l ∈ bd q, (plaqsOf l).card := Finset.card_biUnion_le
+    _ ≤ ∑ _l ∈ bd q, 2 * d := Finset.sum_le_sum (fun l _ => card_plaqsOf l)
+    _ = (bd q).card * (2 * d) := by rw [Finset.sum_const, smul_eq_mul]
+    _ ≤ 4 * (2 * d) := Nat.mul_le_mul_right _ (card_bd q)
+    _ = 8 * d := by ring
+
+open Classical in
+/-- **Strong-coupling area law on the 4D hypercubic lattice, explicit constants.**
+For Z₂ lattice gauge theory on the periodic 4D lattice, whenever tanh β ≤ 1/2048,
+
+  ⟨W_C⟩ ≤ (2048 · tanh β)^A · (1 + 1/1024)^m,
+
+uniformly in the lattice size, where m is the number of plaquettes touching C. The only
+hypothesis left is the minimal area A of surfaces bounded by C. -/
+theorem strong_coupling_area_law_4d_explicit (β : ℝ) (hβ : 0 ≤ β)
+    (htanh : Real.tanh β ≤ 1 / 2048) (C : Finset (Link 4 N)) (A : ℕ)
+    (hA : ∀ T : Finset (Plaq 4 N), HTE.HasBoundary (@bd 4 N _) T C → A ≤ T.card) :
+    HTE.numer (@bd 4 N _) β C / HTE.Z (@bd 4 N _) β ≤
+      (2048 * Real.tanh β) ^ A * (1 + 1 / 1024) ^ (HTE.seeds (@bd 4 N _) C).card := by
+  have hdeg : ∀ p, (Animals.nbr (HTE.share (@bd 4 N _)) p).card ≤ 32 := fun p => by
+    have := (degree_bound (d := 4) (N := N) p).trans (by norm_num : 8 * 4 ≤ 32)
+    convert this
+  have key := HTE.strong_coupling_area_law_perimeter (@bd 4 N _) β hβ C 32 hdeg (1 / 2048)
+    (by norm_num) htanh (by norm_num) A hA
+  have e1 : Real.tanh β / (1 / 2048) = 2048 * Real.tanh β := by ring
+  have e2 : (1 : ℝ) + 1 / 2048 / (1 - ((32 : ℕ) : ℝ) ^ 2 * (1 / 2048)) = 1 + 1 / 1024 := by
+    norm_num
+  rw [e1, e2] at key
+  exact key
+
+end Hypercubic

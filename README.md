@@ -24,8 +24,9 @@ depends only on Lean's three standard axioms (`propext`, `Classical.choice`,
 | 3 | Conjecture mode: engine invents and tests its own statements | 45 explored: 16 proved, 18 refuted, 11 open | [`results/2026-11-25-conjecture-run/`](results/2026-11-25-conjecture-run/) |
 | 4 | Engine search on Part G's basic lemmas, given only the definitions | 6 of 7 | [`results/2026-11-25-engine-part-g/`](results/2026-11-25-engine-part-g/) |
 | 5 | Engine search on Part I's lemmas, given only the definitions | 3 of 10 | [`results/2026-11-27-engine-pieces/`](results/2026-11-27-engine-pieces/) |
+| 6 | Engine search on Part J's lemmas, with hints written by the proposer | 3 of 6 | [`results/2026-11-27-engine-degree/`](results/2026-11-27-engine-degree/) |
 
-Parts B to I were developed with an AI-assisted proposer and checked by Lean outside the
+Parts B to J were developed with an AI-assisted proposer and checked by Lean outside the
 search loop; run 4 put the engine back on Part G's basic lemmas, where it found its own
 proofs for 6 of 7. The tactic list proved none of the 6 new results of run 2 on its own. They need multi-step
 plans (reindexing a sum over a group, hyperbolic identities, a product of sums),
@@ -143,12 +144,23 @@ Here m is the number of plaquettes touching C, so the second factor is a perimet
 correction e^{μ|C|}, and (tanh β / τ)^A is the area law. This is the standard form of the
 strong-coupling result, proved for any lattice in any dimension.
 
-**What remains for a complete 4D strong-coupling confinement theorem** is now two facts about
-the hypercubic lattice, both stated as hypotheses:
+**The degree bound and an explicit 4D area law** (Part J). In d dimensions each link lies in
+at most 2d plaquettes and each plaquette has 4 links, so each plaquette shares a link with at
+most 8d plaquettes. In 4D that is Δ = 32, which discharges the degree hypothesis:
 
-1. **Degree bound**: each plaquette shares a link with at most Δ plaquettes (Δ = 21 in 4D,
-   itself included).
-2. **Minimal area**: every surface bounded by an R×T planar loop has at least R·T plaquettes.
+| Theorem | Statement |
+| --- | --- |
+| `Hypercubic.card_plaqsOf` | A link lies in at most 2d plaquettes |
+| `Hypercubic.degree_bound` | A plaquette shares a link with at most 8d plaquettes |
+| `Hypercubic.strong_coupling_area_law_4d_explicit` | **4D Z₂ lattice gauge theory: if tanh β ≤ 1/2048, then ⟨W_C⟩ ≤ (2048 tanh β)^A · (1 + 1/1024)^m, uniformly in the lattice size** |
+
+**What remains for a complete 4D strong-coupling confinement theorem** is one fact about the
+hypercubic lattice, the only hypothesis left:
+
+- **Minimal area**: every surface bounded by an R×T planar loop has at least R·T plaquettes.
+
+The constants are far from optimal (the true degree is 21, not 32, and better animal bounds
+exist), but they are explicit and proved.
 
 ### Conjecture mode: the engine proposes its own statements
 

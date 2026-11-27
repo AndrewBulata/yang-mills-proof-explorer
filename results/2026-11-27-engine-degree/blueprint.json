@@ -1,0 +1,74 @@
+{
+  "preamble": "-- Preamble: lean/Verified.lean Parts A to I plus the Part J definitions (planeOf, cand, plaqsOf), without the Part J lemmas.\n-- Note: extra_tactics were written by the proposer; for planeOf_lt, planeOf_gt, and card_bd the hint was essentially the proof.\n",
+  "extra_tactics": [
+    "unfold planeOf",
+    "simp [planeOf, h]",
+    "simp [planeOf, h, not_lt.mpr h.le]",
+    "simp [bd]",
+    "exact Finset.card_le_four",
+    "unfold cand",
+    "simp [plaqsOf]",
+    "aesop",
+    "omega"
+  ],
+  "targets": [
+    {
+      "name": "planeOf_lt",
+      "pathway": 4,
+      "about": "plane of an increasing pair",
+      "statement": "theorem planeOf_lt {d N : ℕ} [NeZero N] (α β : Fin d) (h : α < β) : (planeOf α β : Option {q : Fin d × Fin d // q.1 < q.2}) = some ⟨(α, β), h⟩",
+      "status": "proved",
+      "depth": 0,
+      "attempts": 1,
+      "proof": "theorem planeOf_lt {d N : ℕ} [NeZero N] (α β : Fin d) (h : α < β) : (planeOf α β : Option {q : Fin d × Fin d // q.1 < q.2}) = some ⟨(α, β), h⟩ := by\n  simp [planeOf, h]"
+    },
+    {
+      "name": "planeOf_gt",
+      "pathway": 4,
+      "about": "plane of a decreasing pair",
+      "statement": "theorem planeOf_gt {d N : ℕ} [NeZero N] (α β : Fin d) (h : β < α) : (planeOf α β : Option {q : Fin d × Fin d // q.1 < q.2}) = some ⟨(β, α), h⟩",
+      "status": "proved",
+      "depth": 0,
+      "attempts": 1,
+      "proof": "theorem planeOf_gt {d N : ℕ} [NeZero N] (α β : Fin d) (h : β < α) : (planeOf α β : Option {q : Fin d × Fin d // q.1 < q.2}) = some ⟨(β, α), h⟩ := by\n  simp [planeOf, h, not_lt.mpr h.le]"
+    },
+    {
+      "name": "card_bd",
+      "pathway": 4,
+      "about": "a plaquette has at most four boundary links",
+      "statement": "theorem card_bd {d N : ℕ} [NeZero N] (q : Plaq d N) : (bd q).card ≤ 4",
+      "status": "proved",
+      "depth": 0,
+      "attempts": 1,
+      "proof": "theorem card_bd {d N : ℕ} [NeZero N] (q : Plaq d N) : (bd q).card ≤ 4 := by\n  exact Finset.card_le_four"
+    },
+    {
+      "name": "mem_bd_cand",
+      "pathway": 4,
+      "about": "every plaquette containing l is a candidate",
+      "statement": "theorem mem_bd_cand {d N : ℕ} [NeZero N] (l : Link d N) (q : Plaq d N) (hl : l ∈ bd q) : ∃ c, cand l c = some q",
+      "status": "open",
+      "depth": 0,
+      "attempts": 1,
+      "stuck_goal": "d N : ℕ\ninst✝ : NeZero N\nl : Link d N\nq : Plaq d N\nhl : l ∈ bd q\n⊢ ∃ c, cand l c = some q"
+    },
+    {
+      "name": "card_plaqsOf",
+      "pathway": 4,
+      "about": "a link lies in at most 2d plaquettes",
+      "statement": "theorem card_plaqsOf {d N : ℕ} [NeZero N] (l : Link d N) : (plaqsOf l).card ≤ 2 * d",
+      "status": "open",
+      "depth": 0,
+      "attempts": 1,
+      "stuck_goal": "d N : ℕ\ninst✝ : NeZero N\nl : Link d N\n⊢ (plaqsOf l).card ≤ 2 * d"
+    },
+    {
+      "name": "degree_bound",
+      "pathway": 4,
+      "about": "each plaquette shares a link with at most 8d plaquettes",
+      "statement": "theorem degree_bound {d N : ℕ} [NeZero N] (q : Plaq d N) : (Animals.nbr (HTE.share (@bd d N _)) q).card ≤ 8 * d",
+      "status": "invalid",
+      "depth": 0
+    }
+  ]
+}
