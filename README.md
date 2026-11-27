@@ -23,8 +23,9 @@ depends only on Lean's three standard axioms (`propext`, `Classical.choice`,
 | 2 | AI-assisted proposer, every proof verified by Lean | remaining 10, plus 13 new | [`results/2026-11-25-ai-assisted/`](results/2026-11-25-ai-assisted/) |
 | 3 | Conjecture mode: engine invents and tests its own statements | 45 explored: 16 proved, 18 refuted, 11 open | [`results/2026-11-25-conjecture-run/`](results/2026-11-25-conjecture-run/) |
 | 4 | Engine search on Part G's basic lemmas, given only the definitions | 6 of 7 | [`results/2026-11-25-engine-part-g/`](results/2026-11-25-engine-part-g/) |
+| 5 | Engine search on Part I's lemmas, given only the definitions | 3 of 10 | [`results/2026-11-27-engine-pieces/`](results/2026-11-27-engine-pieces/) |
 
-Parts B to H were developed with an AI-assisted proposer and checked by Lean outside the
+Parts B to I were developed with an AI-assisted proposer and checked by Lean outside the
 search loop; run 4 put the engine back on Part G's basic lemmas, where it found its own
 proofs for 6 of 7. The tactic list proved none of the 6 new results of run 2 on its own. They need multi-step
 plans (reindexing a sum over a group, hyperbolic identities, a product of sums),
@@ -125,15 +126,29 @@ every vertex has at most Δ neighbours:
 | `Animals.card_walksFrom` | There are at most Δ^m walks with m steps from a vertex |
 | `Animals.animal_count` | **At most Δ^(2k) connected sets of size k + 1 contain a given vertex** |
 
-**What remains for a complete 4D strong-coupling confinement theorem:**
+**Several pieces along the loop, and the perimeter-corrected area law** (Part I). The part
+of a surface attached to the loop can have several connected pieces, each touching the loop
+somewhere else. Induction on the plaquettes touching the loop handles this: peel off the
+piece reachable from one of them, show the rest is still attached to the others, and
+multiply. Each piece is then counted by the lattice-animal bound.
 
-1. **Several components.** The attached part of a surface can have several connected
-   pieces, each touching the loop at a different place. Splitting it into pieces rooted at
-   the loop's plaquettes, and applying the animal bound to each, gives an area law with a
-   perimeter correction: ⟨W_C⟩ ≤ e^{μ|C|} (c tanh β)^A. This is the standard form.
-2. **Degree of the 4D plaquette graph.** Each plaquette shares a link with at most 20 others
-   (Δ = 21 counting itself), so c = Δ². Proving this needs the explicit 4D geometry.
-3. **Minimal area.** Every surface bounded by an R×T planar loop has at least R·T plaquettes.
+| Theorem | Statement |
+| --- | --- |
+| `Animals.rest_attached` | Removing one seed's piece leaves a set attached to the other seeds |
+| `Animals.Gsum_le_prod` | Attached sets, weighted by τ^size, sum to at most ∏ over seeds of (1 + rooted sum) |
+| `Animals.Rsum_le` | Each rooted sum is at most τ / (1 − Δ²τ), by the lattice-animal bound |
+| `HTE.strong_coupling_area_law_perimeter` | **⟨W_C⟩ ≤ (tanh β / τ)^A · (1 + τ/(1 − Δ²τ))^m, uniform in the volume** |
+
+Here m is the number of plaquettes touching C, so the second factor is a perimeter
+correction e^{μ|C|}, and (tanh β / τ)^A is the area law. This is the standard form of the
+strong-coupling result, proved for any lattice in any dimension.
+
+**What remains for a complete 4D strong-coupling confinement theorem** is now two facts about
+the hypercubic lattice, both stated as hypotheses:
+
+1. **Degree bound**: each plaquette shares a link with at most Δ plaquettes (Δ = 21 in 4D,
+   itself included).
+2. **Minimal area**: every surface bounded by an R×T planar loop has at least R·T plaquettes.
 
 ### Conjecture mode: the engine proposes its own statements
 

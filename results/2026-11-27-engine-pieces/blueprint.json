@@ -1,0 +1,116 @@
+{
+  "preamble": "-- Preamble: lean/Verified.lean Parts A to H plus the Part I definitions (reachSet, AttachedTo, Gsum, Rsum), without the Part I lemmas.\n",
+  "extra_tactics": [
+    "unfold reachSet",
+    "simp [reachSet]",
+    "simp [AttachedTo]",
+    "simp [Gsum]",
+    "simp [Gsum, AttachedTo]",
+    "exact Finset.filter_subset _ _",
+    "simp [Finset.mem_filter]",
+    "tauto",
+    "aesop"
+  ],
+  "targets": [
+    {
+      "name": "reach_sub",
+      "pathway": 4,
+      "about": "reachSet is a subset of T",
+      "statement": "theorem reach_sub {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (T : Finset V) (q : V) : reachSet R T q ⊆ T",
+      "status": "proved",
+      "depth": 0,
+      "attempts": 1,
+      "proof": "theorem reach_sub {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (T : Finset V) (q : V) : reachSet R T q ⊆ T := by\n  simp [reachSet]"
+    },
+    {
+      "name": "mem_reach",
+      "pathway": 4,
+      "about": "membership in reachSet",
+      "statement": "theorem mem_reach {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (T : Finset V) (q x : V) : x ∈ reachSet R T q ↔ x ∈ T ∧ Relation.ReflTransGen (stepIn R T) q x",
+      "status": "proved",
+      "depth": 0,
+      "attempts": 1,
+      "proof": "theorem mem_reach {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (T : Finset V) (q x : V) : x ∈ reachSet R T q ↔ x ∈ T ∧ Relation.ReflTransGen (stepIn R T) q x := by\n  simp [reachSet]"
+    },
+    {
+      "name": "reach_closed",
+      "pathway": 4,
+      "about": "reachSet is closed under steps in T",
+      "statement": "theorem reach_closed {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (T : Finset V) (q b c : V) (hb : b ∈ reachSet R T q) (hbc : stepIn R T b c) : c ∈ reachSet R T q",
+      "status": "open",
+      "depth": 0,
+      "attempts": 1,
+      "stuck_goal": "V : Type\ninst✝² : Fintype V\ninst✝¹ : DecidableEq V\nR : V → V → Prop\ninst✝ : DecidableRel R\nT : Finset V\nq b c : V\nhb : b ∈ reachSet R T q\nhbc : stepIn R T b c\n⊢ c ∈ reachSet R T q"
+    },
+    {
+      "name": "reach_empty",
+      "pathway": 4,
+      "about": "nothing is reachable from a seed outside T",
+      "statement": "theorem reach_empty {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (T : Finset V) (q : V) (hq : q ∉ T) : reachSet R T q = ∅",
+      "status": "open",
+      "depth": 0,
+      "attempts": 1,
+      "stuck_goal": "V : Type\ninst✝² : Fintype V\ninst✝¹ : DecidableEq V\nR : V → V → Prop\ninst✝ : DecidableRel R\nT : Finset V\nq : V\nhq : q ∉ T\n⊢ reachSet R T q = ∅"
+    },
+    {
+      "name": "reach_rooted",
+      "pathway": 4,
+      "about": "the piece reachable from q is connected and rooted at q",
+      "statement": "theorem reach_rooted {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (T : Finset V) (q : V) (hq : q ∈ T) : RootedConn R (reachSet R T q) q",
+      "status": "open",
+      "depth": 0,
+      "attempts": 1,
+      "stuck_goal": "V : Type\ninst✝² : Fintype V\ninst✝¹ : DecidableEq V\nR : V → V → Prop\ninst✝ : DecidableRel R\nT : Finset V\nq : V\nhq : q ∈ T\n⊢ RootedConn R (reachSet R T q) q"
+    },
+    {
+      "name": "attachedTo_empty",
+      "pathway": 4,
+      "about": "with no seeds, only the empty set is attached",
+      "statement": "theorem attachedTo_empty {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (T : Finset V) : AttachedTo R ∅ T ↔ T = ∅",
+      "status": "proved",
+      "depth": 0,
+      "attempts": 1,
+      "proof": "theorem attachedTo_empty {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (T : Finset V) : AttachedTo R ∅ T ↔ T = ∅ := by\n  simp [AttachedTo]\n  grind"
+    },
+    {
+      "name": "rest_attached",
+      "pathway": 4,
+      "about": "removing q's piece leaves a set attached to the other seeds",
+      "statement": "theorem rest_attached {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (Q T : Finset V) (q : V) (h : AttachedTo R (insert q Q) T) : AttachedTo R Q (T \\ reachSet R T q)",
+      "status": "open",
+      "depth": 0,
+      "attempts": 1,
+      "stuck_goal": "V : Type\ninst✝² : Fintype V\ninst✝¹ : DecidableEq V\nR : V → V → Prop\ninst✝ : DecidableRel R\nQ T : Finset V\nq : V\nh : AttachedTo R (insert q Q) T\n⊢ AttachedTo R Q (T \\ reachSet R T q)"
+    },
+    {
+      "name": "Gsum_empty",
+      "pathway": 4,
+      "about": "base case",
+      "statement": "theorem Gsum_empty {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (τ : ℝ) : Gsum R τ ∅ = 1",
+      "status": "open",
+      "depth": 0,
+      "attempts": 1,
+      "stuck_goal": "V : Type\ninst✝² : Fintype V\ninst✝¹ : DecidableEq V\nR : V → V → Prop\ninst✝ : DecidableRel R\nτ : ℝ\n⊢ Gsum R τ ∅ = 1"
+    },
+    {
+      "name": "Gsum_insert",
+      "pathway": 4,
+      "about": "inductive step: peel off one seed's piece",
+      "statement": "theorem Gsum_insert {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (τ : ℝ) (hτ : 0 ≤ τ) (Q : Finset V) (q : V) : Gsum R τ (insert q Q) ≤ (1 + Rsum R τ q) * Gsum R τ Q",
+      "status": "open",
+      "depth": 0,
+      "attempts": 1,
+      "stuck_goal": "V : Type\ninst✝² : Fintype V\ninst✝¹ : DecidableEq V\nR : V → V → Prop\ninst✝ : DecidableRel R\nτ : ℝ\nhτ : 0 ≤ τ\nQ : Finset V\nq : V\n⊢ Gsum R τ (insert q Q) ≤ (1 + Rsum R τ q) * Gsum R τ Q"
+    },
+    {
+      "name": "Gsum_le_prod",
+      "pathway": 4,
+      "about": "product bound over seeds",
+      "statement": "theorem Gsum_le_prod {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R] (τ : ℝ) (hτ : 0 ≤ τ) (Q : Finset V) : Gsum R τ Q ≤ ∏ q ∈ Q, (1 + Rsum R τ q)",
+      "status": "open",
+      "depth": 0,
+      "attempts": 1,
+      "stuck_goal": "V : Type\ninst✝² : Fintype V\ninst✝¹ : DecidableEq V\nR : V → V → Prop\ninst✝ : DecidableRel R\nτ : ℝ\nhτ : 0 ≤ τ\nQ : Finset V\n⊢ Gsum R τ Q ≤ ∏ q ∈ Q, (1 + Rsum R τ q)"
+    }
+  ]
+}

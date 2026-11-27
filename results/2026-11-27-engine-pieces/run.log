@@ -1,0 +1,90 @@
+
+=== round 1: 10 open targets ===
+
+> reach_sub  (depth 0, attempt 1)
+  PROVED
+
+> mem_reach  (depth 0, attempt 1)
+  PROVED
+
+> reach_closed  (depth 0, attempt 1)
+  not yet. stuck at: V : Type
+inst✝² : Fintype V
+inst✝¹ : DecidableEq V
+R : V → V → Prop
+inst✝ : DecidableRel R
+T : Finset V
+q b c : V
+hb : b ∈ reachSet R T q
+hbc : stepIn R T b c
+⊢
+
+> reach_empty  (depth 0, attempt 1)
+  not yet. stuck at: V : Type
+inst✝² : Fintype V
+inst✝¹ : DecidableEq V
+R : V → V → Prop
+inst✝ : DecidableRel R
+T : Finset V
+q : V
+hq : q ∉ T
+⊢ reachSet R T q = ∅
+
+> reach_rooted  (depth 0, attempt 1)
+  not yet. stuck at: V : Type
+inst✝² : Fintype V
+inst✝¹ : DecidableEq V
+R : V → V → Prop
+inst✝ : DecidableRel R
+T : Finset V
+q : V
+hq : q ∈ T
+⊢ RootedConn R (reachSet R T q) q
+
+> attachedTo_empty  (depth 0, attempt 1)
+  PROVED
+
+> rest_attached  (depth 0, attempt 1)
+  not yet. stuck at: V : Type
+inst✝² : Fintype V
+inst✝¹ : DecidableEq V
+R : V → V → Prop
+inst✝ : DecidableRel R
+Q T : Finset V
+q : V
+h : AttachedTo R (insert q Q) T
+⊢ AttachedTo R Q
+
+> Gsum_empty  (depth 0, attempt 1)
+  not yet. stuck at: V : Type
+inst✝² : Fintype V
+inst✝¹ : DecidableEq V
+R : V → V → Prop
+inst✝ : DecidableRel R
+τ : ℝ
+⊢ Gsum R τ ∅ = 1
+
+> Gsum_insert  (depth 0, attempt 1)
+  not yet. stuck at: V : Type
+inst✝² : Fintype V
+inst✝¹ : DecidableEq V
+R : V → V → Prop
+inst✝ : DecidableRel R
+τ : ℝ
+hτ : 0 ≤ τ
+Q : Finset V
+q : V
+⊢ Gsum R τ (insert q Q) ≤ (1 + Rs
+
+> Gsum_le_prod  (depth 0, attempt 1)
+  not yet. stuck at: V : Type
+inst✝² : Fintype V
+inst✝¹ : DecidableEq V
+R : V → V → Prop
+inst✝ : DecidableRel R
+τ : ℝ
+hτ : 0 ≤ τ
+Q : Finset V
+⊢ Gsum R τ Q ≤ ∏ q ∈ Q, (1 + Rsum R τ q
+
+Summary: 3/10 proved. Blueprint saved to /home/claude/pieces_blueprint.json

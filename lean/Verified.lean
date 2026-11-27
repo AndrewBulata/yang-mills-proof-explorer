@@ -14,6 +14,9 @@
           connected attached surfaces.
   Part H: lattice animals in any bounded-degree graph: at most Δ^(2k) connected sets of
           size k + 1 contain a given vertex.
+  Part I: several pieces along the loop, handled by induction on the seed plaquettes; the
+          strong-coupling area law with perimeter correction, uniform in the volume, on any
+          lattice, given only a degree bound and the minimal area.
   Axioms used: only propext, Classical.choice, Quot.sound (Lean's standard three).
 -/
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
@@ -1110,3 +1113,308 @@ theorem animal_count (Δ : ℕ) (hΔ : ∀ v, (nbr R v).card ≤ Δ) (hsymm : �
     _ ≤ Δ ^ (2 * k) := card_walksFrom R Δ hΔ (2 * k) v
 
 end Animals
+
+
+/-! ## Part I: several pieces along the loop, and the perimeter-corrected area law
+
+The part of a surface attached to the loop can split into several connected pieces, each
+touching the loop. Induction on the seed plaquettes handles this: peel off the piece
+reachable from one seed (`reachSet`), show the rest is still attached to the remaining seeds
+(`rest_attached`), and multiply (`Gsum_insert`, `Gsum_le_prod`). Each rooted piece is
+counted by the lattice-animal bound (`Rsum_le`). The result is the standard strong-coupling
+area law with a perimeter correction, uniform in the volume
+(`HTE.strong_coupling_area_law_perimeter`). The proofs of `reach_sub`, `mem_reach`, and
+`attachedTo_empty` were found by the engine's tactic search (results/2026-11-27-engine-pieces). -/
+
+namespace Animals
+
+set_option linter.unusedSectionVars false
+
+variable {V : Type} [Fintype V] [DecidableEq V] (R : V → V → Prop) [DecidableRel R]
+
+open Classical in
+/-- Vertices of T reachable from q inside T (empty if q ∉ T). -/
+noncomputable def reachSet (T : Finset V) (q : V) : Finset V :=
+  T.filter (fun x => Relation.ReflTransGen (stepIn R T) q x)
+
+/-- Every vertex of T is reachable inside T from a seed in Q that lies in T. -/
+def AttachedTo (Q T : Finset V) : Prop :=
+  ∀ x ∈ T, ∃ q ∈ Q, q ∈ T ∧ Relation.ReflTransGen (stepIn R T) q x
+
+open Classical in
+/-- Weighted count of sets attached to the seeds Q. -/
+noncomputable def Gsum (τ : ℝ) (Q : Finset V) : ℝ :=
+  ∑ T ∈ (Finset.univ : Finset (Finset V)).filter (AttachedTo R Q), τ ^ T.card
+
+open Classical in
+/-- Weighted count of connected sets rooted at q. -/
+noncomputable def Rsum (τ : ℝ) (q : V) : ℝ :=
+  ∑ S ∈ (Finset.univ : Finset (Finset V)).filter (fun S => RootedConn R S q), τ ^ S.card
+
+-- found by the engine
+theorem reach_sub (T : Finset V) (q : V) : reachSet R T q ⊆ T := by
+  simp [reachSet]
+
+-- found by the engine
+theorem mem_reach (T : Finset V) (q x : V) :
+    x ∈ reachSet R T q ↔ x ∈ T ∧ Relation.ReflTransGen (stepIn R T) q x := by
+  simp [reachSet]
+
+theorem reach_closed (T : Finset V) (q b c : V) (hb : b ∈ reachSet R T q)
+    (hbc : stepIn R T b c) : c ∈ reachSet R T q := by
+  rw [mem_reach] at hb ⊢
+  exact ⟨hbc.2.1, hb.2.tail hbc⟩
+
+theorem reach_empty (T : Finset V) (q : V) (hq : q ∉ T) : reachSet R T q = ∅ := by
+  ext x
+  simp only [mem_reach, Finset.notMem_empty, iff_false, not_and]
+  intro hx hpath
+  rcases Relation.ReflTransGen.cases_head hpath with h | ⟨c, hqc, _⟩
+  · exact hq (h ▸ hx)
+  · exact hq hqc.1
+
+theorem reach_rooted (T : Finset V) (q : V) (hq : q ∈ T) :
+    RootedConn R (reachSet R T q) q := by
+  refine ⟨(mem_reach R T q q).mpr ⟨hq, Relation.ReflTransGen.refl⟩, fun x hx => ?_⟩
+  have key : ∀ z, Relation.ReflTransGen (stepIn R T) q z →
+      Relation.ReflTransGen (stepIn R (reachSet R T q)) q z := by
+    intro z hz
+    induction hz with
+    | refl => exact Relation.ReflTransGen.refl
+    | @tail b c hqb hbc ih =>
+      have hb : b ∈ reachSet R T q := (mem_reach R T q b).mpr ⟨hbc.1, hqb⟩
+      exact ih.tail ⟨hb, reach_closed R T q b c hb hbc, hbc.2.2⟩
+  exact key x ((mem_reach R T q x).mp hx).2
+
+-- found by the engine
+theorem attachedTo_empty (T : Finset V) : AttachedTo R ∅ T ↔ T = ∅ := by
+  simp [AttachedTo]
+  grind
+
+/-- Removing the piece reachable from q leaves a set attached to the other seeds. -/
+theorem rest_attached (Q T : Finset V) (q : V) (h : AttachedTo R (insert q Q) T) :
+    AttachedTo R Q (T \ reachSet R T q) := by
+  intro x hx
+  rw [Finset.mem_sdiff] at hx
+  obtain ⟨q', hq'Q, hq'T, hpath⟩ := h x hx.1
+  have hq'S : q' ∉ reachSet R T q := fun hq' =>
+    hx.2 ((mem_reach R T q x).mpr ⟨hx.1, ((mem_reach R T q q').mp hq').2.trans hpath⟩)
+  have hq'ne : q' ≠ q := by
+    rintro rfl
+    exact hq'S ((mem_reach R T q' q').mpr ⟨hq'T, Relation.ReflTransGen.refl⟩)
+  have hq'Q' : q' ∈ Q := (Finset.mem_insert.mp hq'Q).resolve_left hq'ne
+  have key : ∀ z, Relation.ReflTransGen (stepIn R T) q' z → z ∉ reachSet R T q →
+      Relation.ReflTransGen (stepIn R (T \ reachSet R T q)) q' z := by
+    intro z hz
+    induction hz with
+    | refl => intro _; exact Relation.ReflTransGen.refl
+    | @tail b c _ hbc ih =>
+      intro hcS
+      have hbS : b ∉ reachSet R T q := fun hb => hcS (reach_closed R T q b c hb hbc)
+      exact (ih hbS).tail ⟨Finset.mem_sdiff.mpr ⟨hbc.1, hbS⟩,
+        Finset.mem_sdiff.mpr ⟨hbc.2.1, hcS⟩, hbc.2.2⟩
+  exact ⟨q', hq'Q', Finset.mem_sdiff.mpr ⟨hq'T, hq'S⟩, key x hpath hx.2⟩
+
+theorem Gsum_empty (τ : ℝ) : Gsum R τ ∅ = 1 := by
+  classical
+  unfold Gsum
+  rw [Finset.sum_filter, Finset.sum_eq_single (∅ : Finset V)]
+  · rw [if_pos ((attachedTo_empty R ∅).mpr rfl), Finset.card_empty, pow_zero]
+  · intro T _ hT
+    rw [if_neg (fun h => hT ((attachedTo_empty R T).mp h))]
+  · intro h; exact absurd (Finset.mem_univ _) h
+
+theorem Rsum_nonneg (τ : ℝ) (hτ : 0 ≤ τ) (q : V) : 0 ≤ Rsum R τ q :=
+  Finset.sum_nonneg (fun S _ => pow_nonneg hτ _)
+
+/-- **Inductive step**: peel off one seed's piece. -/
+theorem Gsum_insert (τ : ℝ) (hτ : 0 ≤ τ) (Q : Finset V) (q : V) :
+    Gsum R τ (insert q Q) ≤ (1 + Rsum R τ q) * Gsum R τ Q := by
+  classical
+  unfold Gsum Rsum
+  set F' := (Finset.univ : Finset (Finset V)).filter (AttachedTo R (insert q Q))
+  set F := (Finset.univ : Finset (Finset V)).filter (AttachedTo R Q)
+  set FR := (Finset.univ : Finset (Finset V)).filter (fun S => RootedConn R S q)
+  let φ : Finset V → Finset V × Finset V := fun T => (reachSet R T q, T \ reachSet R T q)
+  let g : Finset V × Finset V → ℝ := fun x => τ ^ x.1.card * τ ^ x.2.card
+  have hinj : Set.InjOn φ F' := by
+    intro T₁ _ T₂ _ h
+    have h1 : reachSet R T₁ q = reachSet R T₂ q := congrArg Prod.fst h
+    have h2 : T₁ \ reachSet R T₁ q = T₂ \ reachSet R T₂ q := congrArg Prod.snd h
+    calc T₁ = reachSet R T₁ q ∪ T₁ \ reachSet R T₁ q :=
+          (Finset.union_sdiff_of_subset (reach_sub R T₁ q)).symm
+      _ = reachSet R T₂ q ∪ T₂ \ reachSet R T₂ q := by rw [h2, h1]
+      _ = T₂ := Finset.union_sdiff_of_subset (reach_sub R T₂ q)
+  have hsplit : ∀ T ∈ F', τ ^ T.card = g (φ T) := by
+    intro T _
+    simp only [g, φ]
+    rw [← pow_add, add_comm, Finset.card_sdiff_add_card_eq_card (reach_sub R T q)]
+  have hempty : (∅ : Finset V) ∉ FR := by
+    intro h
+    exact Finset.notMem_empty q (Finset.mem_filter.mp h).2.1
+  have himg : F'.image φ ⊆ (insert ∅ FR) ×ˢ F := by
+    intro x hx
+    obtain ⟨T, hT, rfl⟩ := Finset.mem_image.mp hx
+    have hA := (Finset.mem_filter.mp hT).2
+    refine Finset.mem_product.mpr ⟨?_, ?_⟩
+    · by_cases hq : q ∈ T
+      · exact Finset.mem_insert_of_mem (Finset.mem_filter.mpr
+          ⟨Finset.mem_univ _, reach_rooted R T q hq⟩)
+      · show reachSet R T q ∈ insert ∅ FR
+        rw [reach_empty R T q hq]
+        exact Finset.mem_insert_self _ _
+    · exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, rest_attached R Q T q hA⟩
+  calc ∑ T ∈ F', τ ^ T.card = ∑ T ∈ F', g (φ T) := Finset.sum_congr rfl hsplit
+    _ = ∑ x ∈ F'.image φ, g x := (Finset.sum_image hinj).symm
+    _ ≤ ∑ x ∈ (insert ∅ FR) ×ˢ F, g x :=
+        Finset.sum_le_sum_of_subset_of_nonneg himg
+          (fun x _ _ => mul_nonneg (pow_nonneg hτ _) (pow_nonneg hτ _))
+    _ = (∑ S ∈ insert ∅ FR, τ ^ S.card) * ∑ U ∈ F, τ ^ U.card := by
+        rw [Finset.sum_product, Finset.sum_mul_sum]
+    _ = (1 + ∑ S ∈ FR, τ ^ S.card) * ∑ U ∈ F, τ ^ U.card := by
+        rw [Finset.sum_insert hempty, Finset.card_empty, pow_zero]
+
+/-- **Product bound over seeds.** -/
+theorem Gsum_le_prod (τ : ℝ) (hτ : 0 ≤ τ) (Q : Finset V) :
+    Gsum R τ Q ≤ ∏ q ∈ Q, (1 + Rsum R τ q) := by
+  induction Q using Finset.induction_on with
+  | empty => rw [Gsum_empty, Finset.prod_empty]
+  | insert q Q hq ih =>
+    rw [Finset.prod_insert hq]
+    exact (Gsum_insert R τ hτ Q q).trans
+      (mul_le_mul_of_nonneg_left ih (by linarith [Rsum_nonneg R τ hτ q]))
+
+/-- **Each seed's connected pieces, counted by the lattice-animal bound.** -/
+theorem Rsum_le (Δ : ℕ) (hΔ : ∀ v, (nbr R v).card ≤ Δ) (hsymm : ∀ a b, R a b → R b a)
+    (τ : ℝ) (hτ : 0 ≤ τ) (hΔτ : (Δ : ℝ) ^ 2 * τ < 1) (q : V) :
+    Rsum R τ q ≤ τ / (1 - (Δ : ℝ) ^ 2 * τ) := by
+  classical
+  unfold Rsum
+  set F := (Finset.univ : Finset (Finset V)).filter (fun S => RootedConn R S q)
+  have hcard : ∀ S ∈ F, 1 ≤ S.card := fun S hS =>
+    Finset.card_pos.mpr ⟨q, (Finset.mem_filter.mp hS).2.1⟩
+  have hmaps : ∀ S ∈ F, S.card - 1 ∈ Finset.range (Fintype.card V) := by
+    intro S hS
+    have := Finset.card_le_univ S
+    have := hcard S hS
+    exact Finset.mem_range.mpr (by omega)
+  rw [← Finset.sum_fiberwise_of_maps_to hmaps]
+  have hfib : ∀ k ∈ Finset.range (Fintype.card V),
+      ∑ S ∈ F.filter (fun S => S.card - 1 = k), τ ^ S.card ≤ (Δ : ℝ) ^ (2 * k) * τ ^ (k + 1) := by
+    intro k _
+    have hk' : ∀ S ∈ F.filter (fun S => S.card - 1 = k), τ ^ S.card = τ ^ (k + 1) := by
+      intro S hS
+      have h1 := Finset.mem_filter.mp hS
+      have := hcard S h1.1
+      rw [show S.card = k + 1 by omega]
+    rw [Finset.sum_congr rfl hk', Finset.sum_const, nsmul_eq_mul]
+    have hsub : F.filter (fun S => S.card - 1 = k) ⊆
+        (Finset.univ : Finset (Finset V)).filter (fun T => RootedConn R T q ∧ T.card = k + 1) := by
+      intro S hS
+      have h1 := Finset.mem_filter.mp hS
+      have h2 := Finset.mem_filter.mp h1.1
+      have := hcard S h1.1
+      exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, h2.2, by omega⟩
+    have hc : ((F.filter (fun S => S.card - 1 = k)).card : ℝ) ≤ (Δ : ℝ) ^ (2 * k) := by
+      have := (Finset.card_le_card hsub).trans (animal_count R Δ hΔ hsymm q k)
+      exact_mod_cast this
+    exact mul_le_mul_of_nonneg_right hc (pow_nonneg hτ _)
+  refine (Finset.sum_le_sum hfib).trans ?_
+  have hr0 : 0 ≤ (Δ : ℝ) ^ 2 * τ := by positivity
+  have hgeom := HTE.geom_tail ((Δ : ℝ) ^ 2 * τ) hr0 hΔτ 0 (Fintype.card V)
+  simp only [zero_le, if_true, pow_zero] at hgeom
+  calc ∑ k ∈ Finset.range (Fintype.card V), (Δ : ℝ) ^ (2 * k) * τ ^ (k + 1)
+      = τ * ∑ k ∈ Finset.range (Fintype.card V), ((Δ : ℝ) ^ 2 * τ) ^ k := by
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl (fun k _ => ?_)
+        rw [mul_pow, pow_mul, pow_succ]
+        ring
+    _ ≤ τ * (1 / (1 - (Δ : ℝ) ^ 2 * τ)) := mul_le_mul_of_nonneg_left hgeom hτ
+    _ = τ / (1 - (Δ : ℝ) ^ 2 * τ) := by ring
+
+/-- **Area bound for attached families.** If every set in 𝒯 is attached to the seeds Q and
+has at least A elements, then for 0 ≤ t ≤ τ the t-weighted count is at most
+(t/τ)^A · (1 + τ/(1 - Δ²τ))^|Q|. -/
+theorem attached_area_bound (Δ : ℕ) (hΔ : ∀ v, (nbr R v).card ≤ Δ)
+    (hsymm : ∀ a b, R a b → R b a) (Q : Finset V) (t τ : ℝ) (ht : 0 ≤ t) (htτ : t ≤ τ)
+    (hτ : 0 < τ) (hΔτ : (Δ : ℝ) ^ 2 * τ < 1) (A : ℕ) (𝒯 : Finset (Finset V))
+    (h𝒯 : ∀ T ∈ 𝒯, AttachedTo R Q T ∧ A ≤ T.card) :
+    ∑ T ∈ 𝒯, t ^ T.card ≤ (t / τ) ^ A * (1 + τ / (1 - (Δ : ℝ) ^ 2 * τ)) ^ Q.card := by
+  classical
+  have hr0 : 0 ≤ t / τ := div_nonneg ht hτ.le
+  have hr1 : t / τ ≤ 1 := (div_le_one hτ).mpr htτ
+  have step1 : ∀ T ∈ 𝒯, t ^ T.card ≤ (t / τ) ^ A * τ ^ T.card := by
+    intro T hT
+    have e : t ^ T.card = (t / τ) ^ T.card * τ ^ T.card := by
+      rw [← mul_pow, div_mul_cancel₀ _ hτ.ne']
+    rw [e]
+    exact mul_le_mul_of_nonneg_right (pow_le_pow_of_le_one hr0 hr1 (h𝒯 T hT).2)
+      (pow_nonneg hτ.le _)
+  have hsub : 𝒯 ⊆ (Finset.univ : Finset (Finset V)).filter (AttachedTo R Q) :=
+    fun T hT => Finset.mem_filter.mpr ⟨Finset.mem_univ _, (h𝒯 T hT).1⟩
+  have step2 : ∑ T ∈ 𝒯, τ ^ T.card ≤ Gsum R τ Q := by
+    unfold Gsum
+    exact Finset.sum_le_sum_of_subset_of_nonneg hsub (fun _ _ _ => pow_nonneg hτ.le _)
+  have step3 : ∏ q ∈ Q, (1 + Rsum R τ q) ≤ ∏ _q ∈ Q, (1 + τ / (1 - (Δ : ℝ) ^ 2 * τ)) :=
+    Finset.prod_le_prod₀ (fun q _ => by linarith [Rsum_nonneg R τ hτ.le q])
+      (fun q _ => by linarith [Rsum_le R Δ hΔ hsymm τ hτ.le hΔτ q])
+  calc ∑ T ∈ 𝒯, t ^ T.card ≤ ∑ T ∈ 𝒯, (t / τ) ^ A * τ ^ T.card := Finset.sum_le_sum step1
+    _ = (t / τ) ^ A * ∑ T ∈ 𝒯, τ ^ T.card := by rw [Finset.mul_sum]
+    _ ≤ (t / τ) ^ A * Gsum R τ Q := mul_le_mul_of_nonneg_left step2 (pow_nonneg hr0 _)
+    _ ≤ (t / τ) ^ A * ∏ q ∈ Q, (1 + Rsum R τ q) :=
+        mul_le_mul_of_nonneg_left (Gsum_le_prod R τ hτ.le Q) (pow_nonneg hr0 _)
+    _ ≤ (t / τ) ^ A * (1 + τ / (1 - (Δ : ℝ) ^ 2 * τ)) ^ Q.card := by
+        refine mul_le_mul_of_nonneg_left ?_ (pow_nonneg hr0 _)
+        rw [← Finset.prod_const]
+        exact step3
+
+end Animals
+
+namespace HTE
+
+set_option linter.unusedSectionVars false
+
+variable {L P : Type} [Fintype L] [DecidableEq L] [Fintype P] [DecidableEq P]
+
+/-- Two plaquettes sharing a link. -/
+def share (bd : P → Finset L) (p q : P) : Prop := ∃ l, l ∈ bd p ∧ l ∈ bd q
+
+open Classical in
+/-- Plaquettes touching the loop C. -/
+noncomputable def seeds (bd : P → Finset L) (C : Finset L) : Finset P :=
+  Finset.univ.filter (fun p => ∃ l, l ∈ C ∧ l ∈ bd p)
+
+open Classical in
+/-- **Strong-coupling area law with perimeter correction, any lattice, uniform in volume.**
+If each plaquette shares a link with at most Δ plaquettes (itself included), every surface
+bounded by C has at least A plaquettes, and tanh β ≤ τ with Δ²τ < 1, then
+
+  ⟨W_C⟩ ≤ (tanh β / τ)^A · (1 + τ/(1 - Δ²τ))^m,
+
+where m is the number of plaquettes touching C. The only remaining inputs are the degree
+bound and the minimal area. -/
+theorem strong_coupling_area_law_perimeter (bd : P → Finset L) (β : ℝ) (hβ : 0 ≤ β)
+    (C : Finset L) (Δ : ℕ) (hΔ : ∀ p, (Animals.nbr (share bd) p).card ≤ Δ) (τ : ℝ)
+    (hτ : 0 < τ) (htτ : Real.tanh β ≤ τ) (hΔτ : (Δ : ℝ) ^ 2 * τ < 1) (A : ℕ)
+    (hA : ∀ T : Finset P, HasBoundary bd T C → A ≤ T.card) :
+    numer bd β C / Z bd β ≤
+      (Real.tanh β / τ) ^ A * (1 + τ / (1 - (Δ : ℝ) ^ 2 * τ)) ^ (seeds bd C).card := by
+  set 𝒯 := ((Finset.univ : Finset P).powerset.filter (fun S => HasBoundary bd S C)).image
+    (comp bd C) with h𝒯
+  have hmem : ∀ S, HasBoundary bd S C → comp bd C S ∈ 𝒯 := fun S hS =>
+    Finset.mem_image.mpr ⟨S, Finset.mem_filter.mpr
+      ⟨Finset.mem_powerset.mpr (Finset.subset_univ _), hS⟩, rfl⟩
+  have hsymm : ∀ a b, share bd a b → share bd b a := fun a b ⟨l, h1, h2⟩ => ⟨l, h2, h1⟩
+  have h𝒯prop : ∀ T ∈ 𝒯, Animals.AttachedTo (share bd) (seeds bd C) T ∧ A ≤ T.card := by
+    intro T hT
+    obtain ⟨S, hS, rfl⟩ := Finset.mem_image.mp hT
+    have hSb := (Finset.mem_filter.mp hS).2
+    refine ⟨fun p hp => ?_, hA _ (comp_boundary bd C S hSb)⟩
+    obtain ⟨q, hq, hqC, hpath⟩ := comp_attached bd C S p hp
+    exact ⟨q, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hqC⟩, hq, hpath⟩
+  refine (wilson_le_polymer bd β hβ C 𝒯 (comp bd C) (comp_sub bd C) hmem
+    (rest_closed bd C)).trans ?_
+  exact Animals.attached_area_bound (share bd) Δ hΔ hsymm (seeds bd C) _ τ
+    (tanh_nonneg' β hβ) htτ hτ hΔτ A 𝒯 h𝒯prop
+
+end HTE
